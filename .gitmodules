@@ -1,0 +1,6 @@
+[submodule "squads/opb"]
+	path = squads/opb
+	url = git@github.com:alexmeirelles/OPB-Squad.git
+[submodule "squads/zero-to-one"]
+	path = squads/zero-to-one
+	url = git@github.com:alexmeirelles/zero-to-one-squad.git

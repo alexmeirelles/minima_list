@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // External framework directories (not part of this Next.js project):
+    ".aiox-core/**",
+    ".aios-core/**",
   ]),
 ]);
 

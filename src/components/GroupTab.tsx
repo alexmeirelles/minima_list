@@ -16,9 +16,11 @@ export default function GroupTab({ group, isActive, onClick, onUpdate, onDeleteR
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(group.title);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setEditTitle(group.title);
   }, [group.title]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = () => {
     if (editTitle.trim() && editTitle !== group.title) {

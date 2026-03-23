@@ -70,3 +70,41 @@ HTML5 drag API. `TaskItem` sets `dataTransfer.setData('taskId', ...)`. `TaskList
 Copy `.env.local.example` to `.env.local` and fill in Firebase credentials. All vars are prefixed `NEXT_PUBLIC_`.
 
 Enable **Anonymous Authentication** in the Firebase console for the project.
+
+## AIOS God Mode
+
+Skills installed at `.claude/skills/`:
+- `aiox-god-mode` — Supreme operator. Activate with `/aiox-god-mode`. Routes requests to agents, creates components, configures system.
+- `aios-god-mode` — Legacy alias → redirects to `aiox-god-mode`.
+- `find-skills` — Discovers available skills.
+
+Rules: `.claude/rules/tool-examples.md`
+Settings: `.claude/settings.json`
+
+## Squads
+
+Squads are installed at `squads/` (root). Each squad is a self-contained multi-agent system.
+
+### zero-to-one (`squads/zero-to-one/`)
+- **Purpose:** Validate and launch an AI-first business from $0 to first revenue.
+- **Activate:** `/v1 start`
+- **Slash prefix:** `/v1 <command>`
+- **Key commands:** `/v1 start`, `/v1 status`, `/v1 goto phase-{N}`, `/v1 pre-mortem`, `/v1 48h-mvp`, `/v1 launch`, `/v1 pivot`
+- **Agents:** 34 agents across 10 phases (DISCOVER → VALIDATE → ARCHITECT → MODEL → OFFER → BUILD → LAUNCH → ITERATE → SUSTAIN → GROW)
+- **CLAUDE.md:** `squads/zero-to-one/CLAUDE.md` — load for boot sequence and rules
+- **Config:** `squads/zero-to-one/config/` (principles, heuristics, quality-gates)
+
+### opb (`squads/opb/`)
+- **Purpose:** Virtual board of directors for One-Person Business founders (PT-BR).
+- **Activate:** `@opb` or `/reunion {minutes} {topic}`
+- **Slash prefix:** `/opb` / `/reunion`
+- **Key commands:** `/reunion 5 {topic}` (quick), `/reunion 15 {topic}` (tactical), `/reunion 45 {topic}` (full assembly)
+- **Agents:** 12 agents — CEO Sintético (Dalio), Peter Thiel, Naval Ravikant, Alex Hormozi, Noah Kagan, Justin Welsh, Dan Koe, Alan Nicolas, CFO Synth, COO Synth, Russell Brunson, Advocatus Diaboli
+- **CLAUDE.md:** `squads/opb/CLAUDE.md` — load for routing rules and output format
+- **Shield:** Every plan MUST pass Advocatus Diaboli → CFO Synth → COO Synth before delivery
+
+### God Mode ↔ Squads routing
+When the user invokes a squad command (`/v1 *`, `/opb`, `/reunion`), God Mode should:
+1. Read the squad's `CLAUDE.md` for boot/routing rules
+2. Load only the relevant agent file from `squads/{squad}/agents/`
+3. Follow the squad's own workflow — do not override with AIOS core workflows
