@@ -1,6 +1,9 @@
 # Work Log — minima_list
 
+## 17 abr, 16:29
+✅ **sync AIOX framework to latest upstream** `7ef0fed`
+Chore · 97 arquivo(s): core-config.yaml config-cache.js config-loader.js build-state-manager.js hook-runtime.js yaml-validator.js (+91 mais)
 
-## 2026-04-17 16:29
-**chore: sync AIOX framework to latest upstream** `7ef0fed`
-Files (97): .aiox-core/core-config.yaml .aiox-core/core/config/config-cache.js .aiox-core/core/config/config-loader.js .aiox-core/core/execution/build-state-manager.js .aiox-core/core/synapse/runtime/hook-runtime.js .aiox-core/core/utils/yaml-validator.js .aiox-core/data/entity-registry.yaml .aiox-core/development/scripts/workflow-validator.js 
+## 19 abr, 15:26
+📄 **initialize work-log with project history** `f186bd0`
+Docs · 0 arquivo(s): 
