@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
 import TaskItem from './TaskItem';
 import type { Task } from '@/types';
 
 interface Props {
   listId: string;
   tasks: Task[];
-  onAddTask: (text: string, listId: string) => void;
+  onAddTask: (text: string, listId: string, options?: { isSection?: boolean }) => void;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
   onDeleteTask: (taskId: string) => void;
   onDropTask: (taskId: string, newListId: string) => void;
@@ -24,16 +23,22 @@ export default function TaskListWithLines({
   onDeleteTask,
   onDropTask,
   minLines = 5,
-  placeholder = 'Add a task...',
+  placeholder = 'Add task...',
 }: Props) {
   const [newTaskText, setNewTaskText] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newTaskText.trim()) {
-      onAddTask(newTaskText, listId);
-      setNewTaskText('');
+    const raw = newTaskText.trim();
+    if (!raw) return;
+
+    if (raw.startsWith('---')) {
+      const label = raw.slice(3).trim();
+      if (label) onAddTask(label, listId, { isSection: true });
+    } else {
+      onAddTask(raw, listId);
     }
+    setNewTaskText('');
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -47,7 +52,8 @@ export default function TaskListWithLines({
     if (taskId) onDropTask(taskId, listId);
   };
 
-  const emptyLinesCount = Math.max(0, minLines - tasks.length);
+  const nonSectionTasks = tasks.filter((t) => !t.isSection);
+  const emptyLinesCount = Math.max(0, minLines - nonSectionTasks.length);
 
   return (
     <div className="flex-1" onDragOver={handleDragOver} onDrop={handleDrop}>
@@ -60,17 +66,14 @@ export default function TaskListWithLines({
         />
       ))}
 
-      <form onSubmit={handleSubmit} className="mt-1 group border-b border-gray-100">
-        <div className="flex items-center text-gray-400 focus-within:text-[#967259] py-1.5 px-1">
-          <Plus size={14} className="mr-2 opacity-50 group-hover:opacity-100 transition-opacity" />
-          <input
-            type="text"
-            placeholder={placeholder}
-            className="w-full bg-transparent outline-none placeholder-gray-300 text-sm font-medium text-gray-800"
-            value={newTaskText}
-            onChange={(e) => setNewTaskText(e.target.value)}
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="border-b border-gray-100">
+        <input
+          type="text"
+          placeholder={placeholder}
+          className="w-full bg-transparent outline-none placeholder-gray-200 text-sm text-gray-700 py-1.5 px-1 hover:placeholder-gray-300 focus:placeholder-gray-300 transition-colors"
+          value={newTaskText}
+          onChange={(e) => setNewTaskText(e.target.value)}
+        />
       </form>
 
       {Array.from({ length: emptyLinesCount }).map((_, i) => (

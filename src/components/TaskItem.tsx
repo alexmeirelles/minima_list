@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Trash2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { Task } from '@/types';
 
 interface Props {
@@ -31,22 +31,45 @@ export default function TaskItem({ task, onUpdate, onDelete }: Props) {
     e.dataTransfer.effectAllowed = 'move';
   };
 
+  if (task.isSection) {
+    return (
+      <div className="group flex items-center py-1 px-1 mt-2 mb-0.5">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex-1">
+          {task.text}
+        </span>
+        <button
+          onClick={() => onDelete(task.id)}
+          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-gray-500 transition-opacity"
+        >
+          <X size={10} />
+        </button>
+      </div>
+    );
+  }
+
+  const bgStyle = task.color
+    ? { backgroundColor: task.color }
+    : {};
+
   return (
     <div
       draggable
       onDragStart={handleDragStart}
-      className={`group flex items-start py-1.5 px-1 hover:bg-gray-50 transition-colors duration-150 cursor-grab active:cursor-grabbing border-b border-gray-100 ${
-        task.isCompleted ? 'opacity-50' : ''
-      }`}
+      style={bgStyle}
+      className={`group flex items-start py-1.5 px-1 transition-colors duration-100 cursor-grab active:cursor-grabbing border-b border-gray-100 ${
+        task.color ? 'rounded-sm' : 'hover:bg-gray-50'
+      } ${task.isCompleted ? 'opacity-40' : ''}`}
     >
       <div
-        className="mt-1 mr-2 cursor-pointer text-gray-400 transition-colors flex-shrink-0"
+        className="mt-0.5 mr-2 cursor-pointer flex-shrink-0"
         onClick={handleToggleComplete}
       >
         {task.isCompleted ? (
-          <Check size={16} className="text-[#967259]" />
+          <div className="w-3.5 h-3.5 border border-gray-300 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+          </div>
         ) : (
-          <div className="w-4 h-4 border-2 border-gray-300 rounded-sm hover:border-[#967259]" />
+          <div className="w-3.5 h-3.5 border border-gray-300 hover:border-gray-500 transition-colors" />
         )}
       </div>
 
@@ -55,7 +78,7 @@ export default function TaskItem({ task, onUpdate, onDelete }: Props) {
           <input
             autoFocus
             type="text"
-            className="w-full bg-transparent outline-none border-b border-[#967259]/50 text-sm font-medium text-gray-800"
+            className="w-full bg-transparent outline-none border-b border-gray-400 text-sm text-gray-800"
             value={editText}
             onChange={(e) => setEditText(e.target.value)}
             onBlur={handleSave}
@@ -64,9 +87,9 @@ export default function TaskItem({ task, onUpdate, onDelete }: Props) {
         ) : (
           <div
             onClick={() => setIsEditing(true)}
-            className={`truncate text-sm font-medium text-gray-800 cursor-text ${
+            className={`text-sm text-gray-800 cursor-text leading-snug ${
               task.isCompleted ? 'line-through text-gray-400' : ''
-            }`}
+            } ${task.color ? 'font-medium' : ''}`}
           >
             {task.text}
           </div>
@@ -75,9 +98,9 @@ export default function TaskItem({ task, onUpdate, onDelete }: Props) {
 
       <button
         onClick={() => onDelete(task.id)}
-        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-[#967259] transition-opacity ml-1 flex-shrink-0"
+        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-gray-500 transition-opacity ml-1 flex-shrink-0 mt-0.5"
       >
-        <Trash2 size={14} />
+        <X size={12} />
       </button>
     </div>
   );

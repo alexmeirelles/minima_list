@@ -97,7 +97,7 @@ export function useFirestore(uid: string | undefined) {
 
   // Tasks
   const addTask = useCallback(
-    async (text: string, listId: string) => {
+    async (text: string, listId: string, options?: { isSection?: boolean }) => {
       if (!uid) return;
       const db = getFirebaseDb();
       await addDoc(collection(db, userPath(uid), 'tasks'), {
@@ -105,6 +105,7 @@ export function useFirestore(uid: string | undefined) {
         listId,
         isCompleted: false,
         isRecurring: false,
+        isSection: options?.isSection ?? false,
         createdAt: serverTimestamp(),
       });
     },

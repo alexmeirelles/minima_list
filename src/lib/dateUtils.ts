@@ -29,6 +29,13 @@ export const formatDisplayDate = (date: Date): string => {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
 };
 
+export const formatDateFull = (date: Date): string => {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
+
 export const formatDayName = (date: Date): string => {
   return new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date);
 };

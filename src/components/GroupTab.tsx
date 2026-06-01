@@ -7,20 +7,19 @@ import type { Group } from '@/types';
 interface Props {
   group: Group;
   isActive: boolean;
+  taskCount: number;
   onClick: () => void;
   onUpdate: (groupId: string, title: string) => void;
   onDeleteRequest: (groupId: string) => void;
 }
 
-export default function GroupTab({ group, isActive, onClick, onUpdate, onDeleteRequest }: Props) {
+export default function GroupTab({ group, isActive, taskCount, onClick, onUpdate, onDeleteRequest }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(group.title);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setEditTitle(group.title);
   }, [group.title]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = () => {
     if (editTitle.trim() && editTitle !== group.title) {
@@ -39,7 +38,7 @@ export default function GroupTab({ group, isActive, onClick, onUpdate, onDeleteR
       <input
         autoFocus
         type="text"
-        className="bg-[#967259]/10 text-[11px] font-bold uppercase tracking-wider px-2 py-1.5 rounded-sm outline-none border-b border-[#967259] w-24 text-gray-800"
+        className="text-[11px] font-bold uppercase tracking-widest px-2 py-1.5 outline-none border-b border-gray-400 w-24 text-gray-800 bg-transparent"
         value={editTitle}
         onChange={(e) => setEditTitle(e.target.value)}
         onBlur={handleSave}
@@ -54,11 +53,16 @@ export default function GroupTab({ group, isActive, onClick, onUpdate, onDeleteR
         onClick={onClick}
         onDoubleClick={() => setIsEditing(true)}
         title="Double click to rename"
-        className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-sm transition-colors ${
-          isActive ? 'text-[#967259] bg-[#967259]/10' : 'text-gray-400 hover:text-gray-600'
+        className={`text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 transition-colors ${
+          isActive ? 'text-gray-900' : 'text-gray-300 hover:text-gray-500'
         }`}
       >
         {group.title}
+        {taskCount > 0 && (
+          <span className={`ml-1.5 ${isActive ? 'text-gray-400' : 'text-gray-300'}`}>
+            {taskCount}
+          </span>
+        )}
       </button>
 
       <button
@@ -66,10 +70,10 @@ export default function GroupTab({ group, isActive, onClick, onUpdate, onDeleteR
           e.stopPropagation();
           onDeleteRequest(group.id);
         }}
-        className="ml-1 opacity-0 group-hover/tab:opacity-100 text-gray-300 hover:text-red-500 transition-opacity p-0.5"
+        className="ml-0.5 opacity-0 group-hover/tab:opacity-100 text-gray-300 hover:text-gray-500 transition-opacity p-0.5"
         title="Delete Group"
       >
-        <X size={10} />
+        <X size={9} />
       </button>
     </div>
   );

@@ -9,7 +9,14 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
+    let auth;
+    try {
+      auth = getFirebaseAuth();
+    } catch (err) {
+      console.error('Firebase init error:', err);
+      setLoading(false);
+      return;
+    }
 
     const init = async () => {
       try {

@@ -6,6 +6,8 @@ export interface Task {
   listId: string;
   isCompleted: boolean;
   isRecurring: boolean;
+  isSection?: boolean;
+  color?: string;
   createdAt: Timestamp | null;
 }
 
