@@ -1,369 +1,629 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
+  closestCorners,
+} from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
+import { getWeekDays, getTodayStartDays, formatDateKey } from '@/lib/dateUtils';
+import { parseTodoText } from '@/lib/markdown';
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { X, ChevronDown, ChevronUp, Eye, EyeOff, Settings } from 'lucide-react';
-
-import { useAuth } from '@/hooks/useAuth';
-import { useFirestore } from '@/hooks/useFirestore';
-import { getWeekDays, getTodayStartDays, isSameDay, isCurrentWeek, formatWeekRange, formatDateKey } from '@/lib/dateUtils';
-
-import ConfirmModal from '@/components/ConfirmModal';
+// Components
 import DayColumn from '@/components/DayColumn';
-import GroupTab from '@/components/GroupTab';
 import CustomListColumn from '@/components/CustomListColumn';
-import type { ConfirmModalState } from '@/types';
+import NoteSidebar from '@/components/NoteSidebar';
+import RecurringModal from '@/components/RecurringModal';
+import {
+  SearchIcon,
+  CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronLeftDouble,
+  ChevronRightDouble,
+  DarkModeIcon,
+  LightModeIcon,
+  RecurringIcon,
+  UserIcon,
+  RotateCcwIcon,
+  XIcon,
+} from '@/components/Icons';
 
 export default function Home() {
-  const { user, loading } = useAuth();
   const {
-    tasks,
-    groups,
-    lists,
-    activeGroupId,
-    setActiveGroupId,
-    addTask,
-    updateTask,
-    deleteTask,
-    dropTask,
-    addGroup,
-    updateGroup,
-    deleteGroup,
-    addList,
-    updateList,
-    deleteList,
-    getTasksForListId,
-  } = useFirestore(user?.uid);
+    todos,
+    somedayLists,
+    workspaceName,
+    setWorkspaceName,
+    darkMode,
+    setDarkMode,
+    gridColumnSize,
+    setGridColumnSize,
+    inFocusMode,
+    setInFocusMode,
+    moveTodo,
+    instantiateRecurringTodos,
+    selectedTodo,
+    addSomedayList,
+  } = useTodoStore();
 
-  const [viewDate, setViewDate] = useState(new Date());
+  const [viewDate, setViewDate] = useState<Date>(() => new Date());
+  
+  // Modals / Panels states
+  const [isRecurringOpen, setIsRecurringOpen] = useState(false);
+  const [isSomedayCollapsed, setIsSomedayCollapsed] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
-  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [newGroupTitle, setNewGroupTitle] = useState('');
-  const newGroupInputRef = useRef<HTMLInputElement>(null);
+  // Search state
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const [isCreatingList, setIsCreatingList] = useState(false);
-  const [newListTitle, setNewListTitle] = useState('');
-  const newListInputRef = useRef<HTMLInputElement>(null);
+  // Date input ref for picker
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
-  const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({
-    isOpen: false,
-    message: '',
-    onConfirm: null,
-  });
-
-  const [isListsCollapsed, setIsListsCollapsed] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(true);
-
+  // Initialize/persist dark mode class on body
   useEffect(() => {
-    if (isCreatingGroup && newGroupInputRef.current) {
-      newGroupInputRef.current.focus();
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
     }
-  }, [isCreatingGroup]);
+  }, [darkMode]);
 
+  // Focus search input when opened
   useEffect(() => {
-    if (isCreatingList && newListInputRef.current) {
-      newListInputRef.current.focus();
+    if (showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
     }
-  }, [isCreatingList]);
+  }, [showSearch]);
 
-  const weekDays = useMemo(() => getWeekDays(viewDate), [viewDate]);
-  const today = new Date();
-  const isCurrent = isCurrentWeek(weekDays);
-
-  // Current week shows 5 days from today; other weeks show full Mon–Sun
-  const displayDays = useMemo(
-    () => (isCurrent ? getTodayStartDays(new Date(), 5) : weekDays),
-    [isCurrent, weekDays]
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Requires moving 8px before drag triggers, allowing click events to pass
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
 
-  const navigateWeek = (delta: number) => {
+  // Generate displayed days based on viewDate and column setting
+  const displayedDays = useMemo(() => {
+    const startOfWeek = new Date(viewDate);
+    // Align with Monday
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+    startOfWeek.setDate(diff);
+
+    const daysList: Date[] = [];
+    
+    // Focus Mode displays only today/viewDate
+    if (inFocusMode) {
+      return [viewDate];
+    }
+
+    // Standard column counts: 1, 3, 5, or 7
+    const count = gridColumnSize;
+    for (let i = 0; i < count; i++) {
+      const d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
+      daysList.push(d);
+    }
+    return daysList;
+  }, [viewDate, gridColumnSize, inFocusMode]);
+
+  // Instantiate recurring tasks whenever visible dates change
+  useEffect(() => {
+    const dates = displayedDays.map((d) => formatDateKey(d));
+    instantiateRecurringTodos(dates);
+  }, [displayedDays, instantiateRecurringTodos]);
+
+  const navigateDays = (delta: number) => {
+    const next = new Date(viewDate);
+    next.setDate(viewDate.getDate() + delta);
+    setViewDate(next);
+  };
+
+  const navigateWeeks = (delta: number) => {
     const next = new Date(viewDate);
     next.setDate(viewDate.getDate() + delta * 7);
     setViewDate(next);
   };
 
-  const handleCreateGroup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newGroupTitle.trim()) return;
-    const id = await addGroup(newGroupTitle);
-    setNewGroupTitle('');
-    setIsCreatingGroup(false);
-    if (id) setActiveGroupId(id);
+  const handleDatePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      setViewDate(new Date(e.target.value + 'T00:00:00'));
+    }
   };
 
-  const handleCreateList = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newListTitle.trim() || !activeGroupId) return;
-    await addList(newListTitle, activeGroupId);
-    setNewListTitle('');
-    setIsCreatingList(false);
+  // Helper to find a todo's path in state
+  const findTodoPath = (todoId: string) => {
+    // Search calendar days
+    for (const [dateKey, list] of Object.entries(todos)) {
+      const idx = list.findIndex((item) => item.id === todoId);
+      if (idx !== -1) {
+        return { containerId: dateKey, isSomeday: false, index: idx, item: list[idx] };
+      }
+    }
+    // Search someday lists
+    for (const list of somedayLists) {
+      const idx = list.items.findIndex((item) => item.id === todoId);
+      if (idx !== -1) {
+        return { containerId: list.id, isSomeday: true, index: idx, item: list.items[idx] };
+      }
+    }
+    return null;
   };
 
-  const openConfirm = (message: string, onConfirm: () => void) => {
-    setConfirmModal({ isOpen: true, message, onConfirm });
+  // Drag and drop event handlers
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
   };
 
-  const closeConfirm = () => setConfirmModal({ isOpen: false, message: '', onConfirm: null });
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    setActiveId(null);
 
-  const handleDeleteGroup = (groupId: string) => {
-    openConfirm('Delete this group and all its lists?', async () => {
-      await deleteGroup(groupId);
-      closeConfirm();
+    if (!over) return;
+
+    const activeTodoId = active.id as string;
+    const overId = over.id as string;
+
+    const activePath = findTodoPath(activeTodoId);
+    if (!activePath) return;
+
+    // Check if dropping onto a container column (empty column zone or list header zone)
+    const isOverContainer =
+      todos[overId] !== undefined ||
+      somedayLists.some((l) => l.id === overId);
+
+    if (isOverContainer) {
+      const isTargetSomeday = somedayLists.some((l) => l.id === overId);
+      // Move to end of target container
+      moveTodo(
+        activePath.containerId,
+        overId,
+        activeTodoId,
+        activePath.isSomeday,
+        isTargetSomeday
+      );
+    } else {
+      // Dropping onto/relative to another list item
+      const overPath = findTodoPath(overId);
+      if (!overPath) return;
+
+      moveTodo(
+        activePath.containerId,
+        overPath.containerId,
+        activeTodoId,
+        activePath.isSomeday,
+        overPath.isSomeday,
+        overPath.index
+      );
+    }
+  };
+
+  // Find dragging item for Overlay
+  const draggingItem = useMemo(() => {
+    if (!activeId) return null;
+    const path = findTodoPath(activeId);
+    return path ? path.item : null;
+  }, [activeId]);
+
+  // Create new list
+  const handleCreateList = () => {
+    const name = prompt('Enter the name of your new Someday list:');
+    if (name?.trim()) {
+      addSomedayList(name.trim());
+    }
+  };
+
+  // Reset dashboard state
+  const handleResetData = () => {
+    if (confirm('Are you sure you want to clear all list data and settings? This cannot be undone.')) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
+
+  // Filter lists based on Search Query
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    
+    const results: { text: string; dateOrList: string; isSomeday: boolean; todo: TodoItem }[] = [];
+    
+    // Search calendar days
+    Object.entries(todos).forEach(([dateKey, list]) => {
+      list.forEach((item) => {
+        if (item.text.toLowerCase().includes(searchQuery.toLowerCase())) {
+          results.push({ text: item.text, dateOrList: dateKey, isSomeday: false, todo: item });
+        }
+      });
     });
-  };
 
-  const handleDeleteList = (listId: string) => {
-    openConfirm('Delete this list and its tasks?', async () => {
-      await deleteList(listId);
-      closeConfirm();
+    // Search someday lists
+    somedayLists.forEach((list) => {
+      list.items.forEach((item) => {
+        if (item.text.toLowerCase().includes(searchQuery.toLowerCase())) {
+          results.push({ text: item.text, dateOrList: list.name, isSomeday: true, todo: item });
+        }
+      });
     });
-  };
 
-  const getTaskCountForGroup = (groupId: string) => {
-    const groupListIds = lists.filter((l) => l.groupId === groupId).map((l) => l.id);
-    return tasks.filter((t) => groupListIds.includes(t.listId) && !t.isCompleted && !t.isSection).length;
-  };
-
-  const getDisplayTasksForListId = useCallback(
-    (id: string) => {
-      const t = getTasksForListId(id);
-      return showCompleted ? t : t.filter((task) => !task.isCompleted);
-    },
-    [getTasksForListId, showCompleted]
-  );
-
-  const columnsToRender = activeGroupId ? lists.filter((l) => l.groupId === activeGroupId) : [];
-
-  const weekLabel = isCurrent ? 'Today' : formatWeekRange(weekDays);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <span className="text-xs text-gray-300 uppercase tracking-widest animate-pulse">Loading</span>
-      </div>
-    );
-  }
+    return results;
+  }, [searchQuery, todos, somedayLists]);
 
   return (
-    <div className="min-h-screen bg-white text-gray-800 font-sans flex flex-col">
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        message={confirmModal.message}
-        onConfirm={confirmModal.onConfirm}
-        onCancel={closeConfirm}
-      />
-
-      {/* Header */}
-      <header className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-gray-100 sticky top-0 z-20 bg-white">
-        <nav className="flex items-center gap-0.5 text-gray-400 w-24">
-          <button
-            onClick={() => navigateWeek(-4)}
-            className="px-1.5 py-1 text-xs hover:text-gray-700 transition-colors font-medium"
-            title="Back 4 weeks"
-          >
-            {'<<'}
-          </button>
-          <button
-            onClick={() => navigateWeek(-1)}
-            className="px-1.5 py-1 text-xs hover:text-gray-700 transition-colors font-medium"
-          >
-            {'<'}
-          </button>
-        </nav>
-
-        <h1 className="text-sm font-bold uppercase tracking-widest text-gray-800">
-          Nex<span className="text-gray-400">T</span>
-        </h1>
-
-        <div className="flex items-center gap-0.5 w-24 justify-end">
-          <button
-            onClick={() => setViewDate(new Date())}
-            className={`px-2 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors ${
-              isCurrent ? 'text-gray-300' : 'text-gray-700 hover:text-gray-900'
-            }`}
-          >
-            {weekLabel}
-          </button>
-          <button
-            onClick={() => navigateWeek(1)}
-            className="px-1.5 py-1 text-xs hover:text-gray-700 transition-colors font-medium text-gray-400"
-          >
-            {'>'}
-          </button>
-          <button
-            onClick={() => navigateWeek(4)}
-            className="px-1.5 py-1 text-xs hover:text-gray-700 transition-colors font-medium text-gray-400"
-            title="Forward 4 weeks"
-          >
-            {'>>'}
-          </button>
-        </div>
-      </header>
-
-      <main className="flex-1 overflow-x-auto overflow-y-auto">
-        <div className="min-w-full inline-block align-top">
-          {/* Weekly Calendar — 5 days from today on current week, 7 days otherwise */}
-          <div className="flex flex-col md:flex-row md:divide-x divide-gray-100 border-b border-gray-100">
-            {displayDays.map((date) => (
-              <div key={date.toISOString()} className="flex-1 min-w-[120px] px-4 py-4">
-                <DayColumn
-                  date={date}
-                  isToday={isSameDay(date, today)}
-                  tasks={getDisplayTasksForListId(formatDateKey(date))}
-                  onAddTask={addTask}
-                  onUpdateTask={updateTask}
-                  onDeleteTask={deleteTask}
-                  onDropTask={dropTask}
-                />
-              </div>
-            ))}
+    <div className="app-root">
+      {/* Search overlay/dropdown */}
+      {showSearch && (
+        <div className="bg-[var(--someday-list-background)] border-b border-[var(--todo-border-color)] px-6 py-4 flex flex-col gap-3 relative z-50 shadow-md">
+          <div className="flex items-center gap-3 w-full max-w-2xl mx-auto">
+            <SearchIcon size={18} className="text-[var(--todo-past-text-color)]" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search todos..."
+              className="flex-1 bg-transparent border-none text-sm text-[var(--todo-text-color)] outline-none placeholder-[var(--todo-past-text-color)] font-medium"
+            />
+            <button
+              onClick={() => {
+                setShowSearch(false);
+                setSearchQuery('');
+              }}
+              className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)]"
+              type="button"
+            >
+              <XIcon size={16} />
+            </button>
           </div>
-
-          {/* Groups Toolbar */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <div className="flex items-center gap-0">
-              {groups.map((group, i) => (
-                <div key={group.id} className="flex items-center">
-                  {i > 0 && <span className="text-gray-200 text-xs mx-1">·</span>}
-                  <GroupTab
-                    group={group}
-                    isActive={activeGroupId === group.id}
-                    taskCount={getTaskCountForGroup(group.id)}
-                    onClick={() => setActiveGroupId(group.id)}
-                    onUpdate={updateGroup}
-                    onDeleteRequest={handleDeleteGroup}
-                  />
+          
+          {searchQuery && (
+            <div className="w-full max-w-2xl mx-auto bg-[var(--app-background)] border border-[var(--todo-border-color)] rounded-lg shadow-xl max-h-[300px] overflow-y-auto divide-y divide-[var(--todo-border-color)]">
+              {searchResults.length === 0 ? (
+                <div className="p-4 text-xs text-[var(--todo-past-text-color)] text-center">
+                  No matching tasks found
                 </div>
-              ))}
-
-              {isCreatingGroup ? (
-                <form onSubmit={handleCreateGroup} className="flex items-center ml-2">
-                  <input
-                    ref={newGroupInputRef}
-                    type="text"
-                    placeholder="Group name..."
-                    className="bg-transparent outline-none text-[11px] font-bold uppercase tracking-widest text-gray-700 w-24 border-b border-gray-300"
-                    value={newGroupTitle}
-                    onChange={(e) => setNewGroupTitle(e.target.value)}
-                    onBlur={() => { if (!newGroupTitle.trim()) setIsCreatingGroup(false); }}
-                  />
-                  <button
-                    type="button"
-                    onMouseDown={() => setIsCreatingGroup(false)}
-                    className="ml-1 text-gray-300 hover:text-gray-500"
-                  >
-                    <X size={12} />
-                  </button>
-                </form>
               ) : (
-                <button
-                  onClick={() => setIsCreatingGroup(true)}
-                  className="ml-2 text-[11px] font-bold uppercase tracking-widest text-gray-200 hover:text-gray-400 transition-colors py-1.5 px-2"
-                >
-                  +
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              {activeGroupId && (
-                isCreatingList ? (
-                  <form onSubmit={handleCreateList} className="flex items-center gap-1">
-                    <input
-                      ref={newListInputRef}
-                      type="text"
-                      placeholder="List name..."
-                      className="bg-transparent outline-none text-[11px] font-bold uppercase tracking-widest text-gray-700 w-28 border-b border-gray-300"
-                      value={newListTitle}
-                      onChange={(e) => setNewListTitle(e.target.value)}
-                      onBlur={() => { if (!newListTitle.trim()) setIsCreatingList(false); }}
-                    />
-                    <button
-                      type="button"
-                      onMouseDown={() => setIsCreatingList(false)}
-                      className="text-gray-300 hover:text-gray-500"
-                    >
-                      <X size={12} />
-                    </button>
-                  </form>
-                ) : (
-                  <button
-                    onClick={() => setIsCreatingList(true)}
-                    className="text-[11px] font-bold uppercase tracking-widest text-gray-300 hover:text-gray-600 transition-colors py-1.5"
+                searchResults.map((res, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      const storeSelected = useTodoStore.getState().setSelectedTodo;
+                      storeSelected({
+                        id: res.todo.id,
+                        dateOrListId: res.isSomeday
+                          ? somedayLists.find((l) => l.name === res.dateOrList)?.id || 'someday-default'
+                          : res.dateOrList,
+                        isSomeday: res.isSomeday,
+                      });
+                      setShowSearch(false);
+                      setSearchQuery('');
+                    }}
+                    className="p-3 text-sm text-left hover:bg-[var(--someday-list-background)] cursor-pointer flex flex-col gap-1 transition-all"
                   >
-                    + New List
-                  </button>
-                )
+                    <p className="font-semibold text-[var(--todo-text-color)]">{res.todo.text}</p>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--custom-color)]">
+                      {res.isSomeday ? `Someday List: ${res.dateOrList}` : `Calendar: ${res.dateOrList}`}
+                    </span>
+                  </div>
+                ))
               )}
-
-              <button
-                onClick={() => setIsListsCollapsed(!isListsCollapsed)}
-                className="text-gray-300 hover:text-gray-500 transition-colors"
-                title={isListsCollapsed ? 'Show lists' : 'Hide lists'}
-              >
-                {isListsCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Custom Lists */}
-          {!isListsCollapsed && (
-            <div className="flex overflow-x-auto pb-12 divide-x divide-gray-100">
-              {columnsToRender.map((list) => (
-                <div key={list.id} className="flex-1 min-w-[200px] px-4 py-4">
-                  <CustomListColumn
-                    listId={list.id}
-                    title={list.title}
-                    tasks={getDisplayTasksForListId(list.id)}
-                    onAddTask={addTask}
-                    onUpdateTask={updateTask}
-                    onDeleteTask={deleteTask}
-                    onDropTask={dropTask}
-                    onDeleteRequest={handleDeleteList}
-                    onUpdateList={updateList}
-                  />
-                </div>
-              ))}
             </div>
           )}
         </div>
-      </main>
+      )}
 
-      <footer className="px-6 py-3 border-t border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {displayDays
-            .filter((_, i) => i % 2 === 0)
-            .map((date) => (
+      {/* Hidden input for calendar date picker */}
+      <input
+        ref={dateInputRef}
+        type="date"
+        onChange={handleDatePickerChange}
+        className="sr-only"
+      />
+
+      {/* DndContext wrapping core areas */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        {/* HEADER */}
+        <header className="app-header">
+          {/* Left: Search Toggle & Workspace Name */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-all"
+              title="Search tasks"
+              type="button"
+            >
+              <SearchIcon size={18} />
+            </button>
+            <input
+              type="text"
+              value={workspaceName}
+              onChange={(e) => setWorkspaceName(e.target.value)}
+              placeholder="Click to name your workspace"
+              className="bg-transparent border-none outline-none font-semibold text-xs tracking-wider text-[var(--todo-past-text-color)] placeholder-[var(--todo-past-text-color)]/50 focus:placeholder-transparent transition-all w-48 text-left"
+            />
+          </div>
+
+          {/* Center: Brand Logo */}
+          <div className="header-logo select-none">
+            TEUXDEUX<span>.</span>
+          </div>
+
+          {/* Right: Weeks Navigation Controls */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => navigateWeeks(-1)}
+              className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors"
+              title="Previous Week"
+              type="button"
+            >
+              <ChevronLeftDouble size={16} />
+            </button>
+            <button
+              onClick={() => navigateDays(-1)}
+              className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors"
+              title="Previous Day"
+              type="button"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <button
+              onClick={() => setViewDate(new Date())}
+              className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] hover:bg-[var(--timer-bg)] rounded transition-colors"
+              title="Go to Today"
+              type="button"
+            >
+              TODAY
+            </button>
+
+            <button
+              onClick={() => navigateDays(1)}
+              className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors"
+              title="Next Day"
+              type="button"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <button
+              onClick={() => navigateWeeks(1)}
+              className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors"
+              title="Next Week"
+              type="button"
+            >
+              <ChevronRightDouble size={16} />
+            </button>
+
+            {/* Datepicker icon button */}
+            <button
+              onClick={() => dateInputRef.current?.showPicker()}
+              className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors ml-1"
+              title="Choose date"
+              type="button"
+            >
+              <CalendarIcon size={16} />
+            </button>
+          </div>
+        </header>
+
+        {/* CORE APPLICATION LAYOUT CONTAINER */}
+        <div className="app-layout">
+          
+          {/* CALENDAR SECTION (TOP HALF) */}
+          <section className="calendar-section">
+            <div className="calendar-grid min-w-full">
+              {displayedDays.map((date) => {
+                const dateKey = formatDateKey(date);
+                const dayTasks = todos[dateKey] || [];
+                return (
+                  <DayColumn
+                    key={dateKey}
+                    date={date}
+                    tasks={dayTasks}
+                  />
+                );
+              })}
+            </div>
+          </section>
+
+          {/* SOMEDAY DIVIDER / TOOLBAR */}
+          <div className="someday-toolbar select-none">
+            <nav className="someday-list-tabs">
+              <div className="someday-list-tabs__tabs">
+                <div className="someday-list-tabs__tab someday-list-tabs__tab--active">
+                  <span>SOMEDAY LISTS</span>
+                  <span className="someday-list-tabs__number">
+                    {somedayLists.reduce((acc, curr) => acc + curr.items.length, 0)}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Add list button */}
               <button
-                key={date.toISOString()}
-                onClick={() => setViewDate(date)}
-                className={`text-[10px] font-bold transition-colors ${
-                  isSameDay(date, today) ? 'text-gray-800' : 'text-gray-300 hover:text-gray-500'
-                }`}
+                onClick={handleCreateList}
+                className="someday-list-tabs__add"
+                title="Create Someday List"
+                type="button"
               >
-                {date.getDate()}
+                +
               </button>
-            ))}
+            </nav>
+
+            {/* Collapse list button */}
+            <button
+              onClick={() => setIsSomedayCollapsed(!isSomedayCollapsed)}
+              className="someday-collapse__icon"
+              style={{ transform: isSomedayCollapsed ? 'rotate(180deg)' : 'none' }}
+              title={isSomedayCollapsed ? 'Expand Someday' : 'Collapse Someday'}
+              type="button"
+            >
+              ▼
+            </button>
+          </div>
+
+          {/* SOMEDAY SECTION (BOTTOM HALF) */}
+          {!isSomedayCollapsed && (
+            <section className="someday-list-section">
+              <div className="someday-lists-grid">
+                {somedayLists.map((list) => (
+                  <CustomListColumn
+                    key={list.id}
+                    listId={list.id}
+                    name={list.name}
+                    items={list.items}
+                  />
+                ))}
+
+                {/* Create List Call-to-action Column */}
+                <div className="todo todo--secondary flex flex-col justify-center items-center opacity-60 hover:opacity-100 transition-all p-6 min-w-[204px] border-r border-[var(--footer-border-color)]">
+                  <button
+                    onClick={handleCreateList}
+                    className="flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] hover:text-[var(--custom-color)] transition-colors"
+                    type="button"
+                  >
+                    <span className="text-3xl">+</span>
+                    New List
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowCompleted(!showCompleted)}
-            className="text-gray-300 hover:text-gray-500 transition-colors"
-            title={showCompleted ? 'Hide completed' : 'Show completed'}
-          >
-            {showCompleted ? <Eye size={13} /> : <EyeOff size={13} />}
-          </button>
-          <button
-            className="text-gray-300 hover:text-gray-500 transition-colors"
-            title="Settings"
-          >
-            <Settings size={13} />
-          </button>
-          <span className="text-[10px] text-gray-200 uppercase tracking-widest font-bold">NexT</span>
-        </div>
-      </footer>
+        {/* STICKY FOOTER */}
+        <footer className="app-footer select-none">
+          <div className="app-footer-toolbar">
+            
+            {/* Left: Preferences / Clear Reset Actions */}
+            <div className="flex items-center gap-2">
+              <button onClick={handleResetData} title="Reset Data" type="button">
+                <RotateCcwIcon size={16} />
+              </button>
+              <button
+                onClick={() => setIsRecurringOpen(true)}
+                title="Manage Recurring Tasks"
+                type="button"
+              >
+                <RecurringIcon size={16} />
+              </button>
+            </div>
+
+            {/* Center: Column Segmented Controls */}
+            <div className="ui-segmented-control">
+              <button
+                onClick={() => {
+                  setInFocusMode(false);
+                  setGridColumnSize(1);
+                }}
+                className={!inFocusMode && gridColumnSize === 1 ? 'active' : ''}
+                type="button"
+              >
+                1
+              </button>
+              <button
+                onClick={() => {
+                  setInFocusMode(false);
+                  setGridColumnSize(3);
+                }}
+                className={!inFocusMode && gridColumnSize === 3 ? 'active' : ''}
+                type="button"
+              >
+                3
+              </button>
+              <button
+                onClick={() => {
+                  setInFocusMode(false);
+                  setGridColumnSize(5);
+                }}
+                className={!inFocusMode && gridColumnSize === 5 ? 'active' : ''}
+                type="button"
+              >
+                5
+              </button>
+              <button
+                onClick={() => {
+                  setInFocusMode(false);
+                  setGridColumnSize(7);
+                }}
+                className={!inFocusMode && gridColumnSize === 7 ? 'active' : ''}
+                type="button"
+              >
+                7
+              </button>
+              <button
+                onClick={() => setInFocusMode(!inFocusMode)}
+                className={inFocusMode ? 'active' : ''}
+                title="Focus Mode"
+                type="button"
+              >
+                Focus
+              </button>
+            </div>
+
+            {/* Right: Dark mode toggle & external controls */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                title="Toggle Dark Mode"
+                type="button"
+              >
+                {darkMode ? <LightModeIcon size={16} /> : <DarkModeIcon size={16} />}
+              </button>
+              <a
+                href="https://teuxdeux.com"
+                target="_blank"
+                rel="noreferrer"
+                className="ui-button--cta ui-button--dark flex items-center justify-center h-[26px]"
+              >
+                Go Pro
+              </a>
+              <button title="Settings" type="button">
+                <UserIcon size={16} />
+              </button>
+            </div>
+          </div>
+        </footer>
+
+        {/* Drag overlay to display floats when moving items */}
+        <DragOverlay adjustScale={false}>
+          {draggingItem ? (
+            <div className="draggable--clone flex items-center w-[204px] px-5 h-[34px] bg-[var(--app-background)] border border-[var(--custom-color)] opacity-90 select-none">
+              <div className="todo-content flex items-center w-full gap-2">
+                <input
+                  type="checkbox"
+                  checked={draggingItem.done}
+                  readOnly
+                  className="todo__checkbox"
+                />
+                <span className="todo-content__text truncate">{draggingItem.text}</span>
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Side Detail Note editor Panel */}
+      <NoteSidebar />
+
+      {/* Modal to manage all repeating tasks templates */}
+      <RecurringModal isOpen={isRecurringOpen} onClose={() => setIsRecurringOpen(false)} />
     </div>
   );
 }

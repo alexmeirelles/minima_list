@@ -1,6 +1,578 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
+:root {
+  /* Cor principal (roxo/violeta) */
+  --custom-color: #852CE6;
+  --custom-color-light: rgba(133, 44, 230, 0.3);
+  --custom-color-text: #FFFFFF;
+  --custom-color-highlight: #852CE6;
+  --custom-color-day-label: #F3EAFC;
+
+  /* Texto e backgrounds */
+  --app-color: #000000;
+  --app-background: #ffffff;
+  --banner-text-color: #000000;
+  --focus-outline-color: #852CE6;
+
+  /* Todo items */
+  --todo-border-color: #edeef0;
+  --todo-header-background: #edeef0;
+  --todo-header-text-color: #141414;
+  --todo-past-text-color: #a6a6a7;
+  --todo-text-color: #000000;
+  --todo-text-hover-color: #000000;
+  --todo-text-hover-background-color: #ffffff;
+  --todo-checkbox-done-color: #999999;
+  --todo-button-hover-color: #000000;
+  --todo-button-opacity: 0.1;
+  --todo-item-height: 1.8888889rem; /* ~34px */
+  --todo-outer-margin: 1.1111111rem; /* ~20px */
+
+  /* Someday / listas */
+  --someday-list-background: #f7f8fa;
+  --footer-border-color: #e6e6e6;
+  --timer-bg: rgba(0, 0, 0, 0.1);
+
+  /* Botões */
+  --app-button-color: #c9c9c9;
+  --app-button-move-color: #852CE6;
+  --app-button-hover-color: #852CE6;
+}
+
+body.dark-mode {
+  --custom-color: #9b4ff7;
+  --custom-color-light: rgba(155, 79, 247, 0.3);
+  --custom-color-text: #FFFFFF;
+  --custom-color-highlight: #9b4ff7;
+  --custom-color-day-label: #1e1333;
+
+  --app-color: #ffffff;
+  --app-background: #0f0f11;
+  --banner-text-color: #ffffff;
+  --focus-outline-color: #9b4ff7;
+
+  --todo-border-color: #1e1e24;
+  --todo-header-background: #1e1e24;
+  --todo-header-text-color: #e2e2e8;
+  --todo-past-text-color: #63636e;
+  --todo-text-color: #e2e2e8;
+  --todo-text-hover-color: #ffffff;
+  --todo-text-hover-background-color: #151518;
+  --todo-checkbox-done-color: #63636e;
+  --todo-button-hover-color: #ffffff;
+
+  --someday-list-background: #151518;
+  --footer-border-color: #1e1e24;
+  --timer-bg: rgba(255, 255, 255, 0.08);
+
+  --app-button-color: #63636e;
+  --app-button-move-color: #9b4ff7;
+  --app-button-hover-color: #9b4ff7;
+}
+
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  background-color: var(--app-background);
+  color: var(--app-color);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  overflow: hidden;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--todo-border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--app-button-color);
+}
+
+/* TeuxDeux CSS Layout Structure */
+.app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 44px - 44px); /* minus header and footer */
+  overflow: hidden;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--app-background);
+  border-top: 3.5px solid var(--custom-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--todo-border-color);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* Header typography */
+.header-logo {
+  font-family: 'Barlow Condensed', 'Roboto Condensed', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 1.5px;
+  color: var(--custom-color);
+  user-select: none;
+}
+
+.header-logo span {
+  color: #ff3b30; /* red dot after X */
+}
+
+/* Weekly calendar grid columns */
+.calendar-section {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  background: var(--app-background);
+  border-bottom: 1px solid var(--todo-border-color);
+  position: relative;
+}
+
+.calendar-grid {
+  display: flex;
+  height: 100%;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.todo {
+  display: flex;
+  flex-direction: column;
+  width: 204px;
+  min-width: 204px;
+  border-right: 1px solid var(--todo-border-color);
+  flex-shrink: 0;
+  background: var(--app-background);
+  height: 100%;
+  transition: border-color 0.2s;
+}
+
+/* Header of each column */
+.todo__header {
+  padding: 16px 20px 8px 20px;
+  user-select: none;
+}
+
+.todo__date {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--todo-past-text-color);
+  letter-spacing: 0.8px;
+}
+
+.todo__title {
+  font-family: 'Barlow Condensed', 'Roboto Condensed', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--todo-past-text-color);
+}
+
+/* Current Day Highlight */
+.todo--current .todo__title {
+  color: var(--custom-color);
+}
+
+.todo--current {
+  background: linear-gradient(to bottom, var(--custom-color-day-label) 0%, transparent 120px);
+}
+
+.todo--past .todo__title {
+  opacity: 0.65;
+}
+
+/* Todo items list */
+.todo__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* Single Todo List Item */
+.todo__list-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 20px;
+  height: var(--todo-item-height); /* ~34px */
+  position: relative;
+  cursor: grab;
+  user-select: none;
+}
+
+.todo__list-item:active {
+  cursor: grabbing;
+}
+
+.todo__list-item + .todo__list-item:not(.is-heading) .todo-content {
+  border-top: 1px solid var(--todo-border-color);
+}
+
+.todo-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  gap: 8px;
+}
+
+.todo-content__text {
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--todo-text-color);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.todo-content__text.is-done {
+  text-decoration: line-through;
+  color: var(--todo-checkbox-done-color);
+  opacity: 0.75;
+}
+
+/* Checkbox */
+.todo__checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--custom-color);
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 3px;
+  border: 1px solid var(--app-button-color);
+}
+
+/* Action Buttons on Hover */
+.todo-buttons {
+  display: flex;
+  gap: 4px;
+  opacity: var(--todo-button-opacity);
+  transition: opacity 0.15s;
+}
+
+.todo__list-item:hover .todo-buttons {
+  opacity: 1;
+}
+
+.todo-buttons__button {
+  width: 22px;
+  height: 22px;
+  background: var(--timer-bg);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--todo-text-color);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.todo-buttons__button:hover {
+  background-color: var(--custom-color-light);
+  color: var(--custom-color);
+}
+
+/* Heading/Subheader item */
+.todo__list-item.is-heading {
+  padding: 4px 10px;
+  height: auto;
+  cursor: grab;
+}
+
+.todo__list-item.is-heading .todo-content {
+  background-color: var(--todo-header-background);
+  border-radius: 4px;
+  padding: 4px 10px;
+  border-top: none !important;
+}
+
+.todo__list-item.is-heading h5 {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--todo-header-text-color);
+  flex: 1;
+}
+
+/* Todo Creation Row */
+.todo-content--create {
+  border-top: 1px solid var(--todo-border-color);
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.todo-content--create:hover,
+.todo-content--create:focus-within {
+  opacity: 1;
+}
+
+.todo__input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13.5px;
+  font-family: inherit;
+  width: 100%;
+  color: var(--todo-text-color);
+  padding: 4px 0;
+}
+
+/* Someday section custom layout */
+.someday-list-section {
+  background: var(--someday-list-background);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid var(--footer-border-color);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.someday-toolbar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--footer-border-color);
+  background: var(--app-background);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0 16px;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.someday-list-tabs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+}
+
+.someday-list-tabs__tabs {
+  display: flex;
+  gap: 8px;
+  height: 100%;
+  align-items: center;
+}
+
+.someday-list-tabs__tab {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  height: 100%;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--todo-past-text-color);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.someday-list-tabs__tab:hover {
+  color: var(--todo-text-color);
+}
+
+.someday-list-tabs__tab--active {
+  border-bottom: 2.5px solid var(--custom-color);
+  font-weight: 700;
+  color: var(--todo-text-color);
+}
+
+.someday-list-tabs__number {
+  font-size: 9px;
+  background: var(--todo-border-color);
+  padding: 1px 5px;
+  border-radius: 10px;
+  color: var(--todo-past-text-color);
+  margin-left: 6px;
+  font-weight: 600;
+}
+
+.someday-list-tabs__add {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--app-button-color);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.someday-list-tabs__add:hover {
+  color: var(--custom-color);
+}
+
+.someday-collapse__icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--todo-past-text-color);
+  font-size: 11px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.someday-collapse__icon:hover {
+  color: var(--todo-text-color);
+}
+
+.someday-lists-grid {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--someday-list-background);
+}
+
+.todo--secondary {
+  border-right: 1px solid var(--footer-border-color);
+  background: var(--someday-list-background);
+}
+
+.todo--secondary .todo__title {
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--todo-header-text-color);
+}
+
+/* Footer layout */
+.app-footer {
+  position: sticky;
+  bottom: 0;
+  height: 44px;
+  padding: 0 16px;
+  background: var(--someday-list-background);
+  border-top: 1px solid var(--footer-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.app-footer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.app-footer button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--app-button-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.app-footer button:hover {
+  color: var(--app-button-hover-color);
+  background-color: var(--timer-bg);
+}
+
+/* Segmented Control */
+.ui-segmented-control {
+  display: flex;
+  background: var(--timer-bg);
+  padding: 2.5px;
+  border-radius: 6px;
+  gap: 2px;
+}
+
+.ui-segmented-control button {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--todo-past-text-color);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ui-segmented-control button:hover {
+  color: var(--todo-text-color);
+  background: transparent;
+}
+
+.ui-segmented-control button.active {
+  background: var(--app-background);
+  color: var(--todo-text-color);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Go Pro Button */
+.ui-button--cta {
+  background: var(--custom-color) !important;
+  color: var(--custom-color-text) !important;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 5px 12px !important;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 3px rgba(133, 44, 230, 0.2);
+}
+.ui-button--cta:hover {
+  opacity: 0.9;
+  filter: brightness(1.05);
+}
+
+/* Dragging overlay classes */
+.draggable--dragging {
+  opacity: 0.4;
+  border: 1px dashed var(--custom-color);
+  border-radius: 4px;
+}
+
+.draggable--clone {
+  background-color: var(--app-background);
+  border: 1.5px solid var(--custom-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  z-index: 1000;
+  pointer-events: none;
 }

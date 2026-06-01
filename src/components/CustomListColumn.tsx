@@ -1,95 +1,191 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import TaskListWithLines from './TaskListWithLines';
-import type { Task } from '@/types';
+import React, { useState, useRef, useEffect } from 'react';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
+import TaskItem from './TaskItem';
+import { XIcon, VerticalDotsIcon } from './Icons';
 
-interface Props {
+interface CustomListColumnProps {
   listId: string;
-  title: string;
-  tasks: Task[];
-  onAddTask: (text: string, listId: string, options?: { isSection?: boolean }) => void;
-  onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
-  onDeleteTask: (taskId: string) => void;
-  onDropTask: (taskId: string, newListId: string) => void;
-  onDeleteRequest: (listId: string) => void;
-  onUpdateList: (listId: string, title: string) => void;
+  name: string;
+  items: TodoItem[];
 }
 
-export default function CustomListColumn({
-  listId,
-  title,
-  tasks,
-  onAddTask,
-  onUpdateTask,
-  onDeleteTask,
-  onDropTask,
-  onDeleteRequest,
-  onUpdateList,
-}: Props) {
+export default function CustomListColumn({ listId, name, items }: CustomListColumnProps) {
+  const { addTodo, renameSomedayList, deleteSomedayList } = useTodoStore();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editTitleText, setEditTitleText] = useState(title);
+  const [titleText, setTitleText] = useState(name);
+  const [newText, setNewText] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
+  
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const { setNodeRef } = useDroppable({
+    id: listId,
+  });
 
   useEffect(() => {
-    setEditTitleText(title);
-  }, [title]);
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isEditingTitle]);
 
-  const handleTitleSave = () => {
-    if (editTitleText.trim() && editTitleText !== title) {
-      onUpdateList(listId, editTitleText);
+  useEffect(() => {
+    setTitleText(name);
+  }, [name]);
+
+  // Click outside to close list actions menu
+  useEffect(() => {
+    const clickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', clickOutside);
+    return () => document.removeEventListener('mousedown', clickOutside);
+  }, []);
+
+  const handleRenameSave = () => {
+    const trimmed = titleText.trim();
+    if (trimmed && trimmed !== name) {
+      renameSomedayList(listId, trimmed);
+    } else {
+      setTitleText(name);
     }
     setIsEditingTitle(false);
   };
 
-  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleTitleSave();
-    if (e.key === 'Escape') setIsEditingTitle(false);
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleRenameSave();
+    if (e.key === 'Escape') {
+      setTitleText(name);
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newText.trim();
+    if (trimmed) {
+      addTodo(listId, trimmed, true);
+      setNewText('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setNewText('');
+      e.currentTarget.blur();
+    }
+  };
+
+  const handleDeleteListClick = () => {
+    if (confirm(`Delete the list "${name}" and all its tasks?`)) {
+      deleteSomedayList(listId);
+    }
   };
 
   return (
-    <div className="flex flex-col min-w-[220px] w-full md:w-1/4 lg:w-1/5 snap-center">
-      <div className="border-t border-gray-200 py-2 mb-1 flex justify-between items-center group/header">
-        <div className="flex-1 mr-2">
+    <div className="todo todo--secondary">
+      <header className="todo__header flex items-center justify-between relative group/header select-none">
+        <div className="flex-1 min-w-0 pr-2">
           {isEditingTitle ? (
             <input
-              autoFocus
+              ref={titleInputRef}
               type="text"
-              className="w-full bg-transparent outline-none text-[11px] font-bold uppercase tracking-widest text-gray-700 border-b border-gray-400"
-              value={editTitleText}
-              onChange={(e) => setEditTitleText(e.target.value)}
-              onBlur={handleTitleSave}
+              value={titleText}
+              onChange={(e) => setTitleText(e.target.value)}
+              onBlur={handleRenameSave}
               onKeyDown={handleTitleKeyDown}
+              className="todo__title w-full bg-transparent border-b border-[var(--custom-color)] outline-none text-left"
             />
           ) : (
-            <h3
-              className="text-xs font-bold uppercase tracking-widest text-gray-600 cursor-pointer hover:text-gray-900 transition-colors truncate"
+            <h2
+              className="todo__title truncate cursor-pointer text-left hover:text-[var(--custom-color)] transition-colors"
               onClick={() => setIsEditingTitle(true)}
               title="Click to rename"
             >
-              {title}
-            </h3>
+              {name}
+            </h2>
           )}
         </div>
 
-        <button
-          onClick={() => onDeleteRequest(listId)}
-          className="opacity-0 group-hover/header:opacity-100 text-gray-300 hover:text-gray-500 transition-opacity flex-shrink-0"
-          title="Delete List"
-        >
-          <X size={12} />
-        </button>
-      </div>
+        {/* Options dots menu button */}
+        <div ref={menuRef} className="relative flex-shrink-0">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] opacity-0 group-hover/header:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--timer-bg)]"
+            type="button"
+          >
+            <VerticalDotsIcon size={14} />
+          </button>
+          
+          {showMenu && (
+            <div className="absolute right-0 top-full mt-1 w-32 bg-[var(--app-background)] border border-[var(--todo-border-color)] shadow-lg rounded-md py-1 z-50 text-left">
+              <button
+                onClick={() => {
+                  setIsEditingTitle(true);
+                  setShowMenu(false);
+                }}
+                className="w-full text-left px-3 py-1.5 text-xs text-[var(--todo-text-color)] hover:bg-[var(--timer-bg)]"
+                type="button"
+              >
+                Rename List
+              </button>
+              <button
+                onClick={() => {
+                  handleDeleteListClick();
+                  setShowMenu(false);
+                }}
+                className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-[var(--timer-bg)] font-medium"
+                type="button"
+              >
+                Delete List
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
 
-      <TaskListWithLines
-        listId={listId}
-        tasks={tasks}
-        onAddTask={onAddTask}
-        onUpdateTask={onUpdateTask}
-        onDeleteTask={onDeleteTask}
-        onDropTask={onDropTask}
-        minLines={4}
-      />
+      {/* Droppable sortable list items area */}
+      <div ref={setNodeRef} className="todo__list flex-1 flex flex-col justify-start">
+        <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+          <ul className="flex flex-col gap-0">
+            {items.map((item) => (
+              <TaskItem
+                key={item.id}
+                task={item}
+                dateOrListId={listId}
+                isSomeday={true}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+
+        {/* Empty area filler so you can drop items onto it */}
+        <div className="flex-1 min-h-[40px]" />
+
+        {/* Create Todo Item Row */}
+        <form onSubmit={handleAdd} className="mt-auto px-5 mb-4">
+          <div className="todo-content todo-content--create">
+            <div className="todo__label w-full">
+              <span className="sr-only">Type in your todo</span>
+              <input
+                type="text"
+                value={newText}
+                onChange={(e) => setNewText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder=""
+                className="todo__input"
+              />
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

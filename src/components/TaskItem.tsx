@@ -1,186 +1,275 @@
 'use client';
 
-import { useState } from 'react';
-import { X, RefreshCw } from 'lucide-react';
-import type { Task } from '@/types';
+import React, { useState, useRef, useEffect } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
+import { parseTodoText } from '@/lib/markdown';
+import { NoteIcon, XIcon } from './Icons';
 
-const COLOR_PALETTE = ['#bfdbfe', '#bbf7d0', '#fef08a', '#fed7aa', '#fecaca', '#e9d5ff'];
-const TIME_PATTERN = /(\d{1,2}:\d{2}\s*[—–-]\s*\d{1,2}:\d{2})/;
-
-interface Props {
-  task: Task;
-  onUpdate: (taskId: string, updates: Partial<Task>) => void;
-  onDelete: (taskId: string) => void;
+interface TaskItemProps {
+  task: TodoItem;
+  dateOrListId: string;
+  isSomeday: boolean;
 }
 
-function TaskText({ text }: { text: string }) {
-  const parts = text.split(TIME_PATTERN);
-  if (parts.length === 1) return <span>{text}</span>;
-  return (
-    <>
-      {parts.map((part, i) =>
-        TIME_PATTERN.test(part) ? (
-          <span key={i} className="text-gray-400 text-xs ml-0.5">{part}</span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </>
-  );
-}
-
-export default function TaskItem({ task, onUpdate, onDelete }: Props) {
+export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProps) {
+  const { toggleTodo, updateTodoText, deleteTodo, setSelectedTodo, selectedTodo } = useTodoStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(task.text);
-  const [showColorPicker, setShowColorPicker] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleToggleComplete = () => onUpdate(task.id, { isCompleted: !task.isCompleted });
+  // Swipe for mobile
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiped, setIsSwiped] = useState(false);
 
-  const handleToggleRecurring = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onUpdate(task.id, { isRecurring: !task.isRecurring });
+  const parsed = parseTodoText(task.text);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : undefined,
+    touchAction: 'none',
   };
 
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
   const handleSave = () => {
-    if (editText.trim()) onUpdate(task.id, { text: editText });
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== task.text) {
+      updateTodoText(dateOrListId, task.id, isSomeday, trimmed);
+    } else if (!trimmed) {
+      deleteTodo(dateOrListId, task.id, isSomeday);
+    }
     setIsEditing(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSave();
-    if (e.key === 'Escape') setIsEditing(false);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    }
+    if (e.key === 'Escape') {
+      setEditText(task.text);
+      setIsEditing(false);
+    }
   };
 
-  const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('taskId', task.id);
-    e.dataTransfer.effectAllowed = 'move';
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
   };
 
-  const handleColorSelect = (color: string) => {
-    onUpdate(task.id, { color });
-    setShowColorPicker(false);
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleTodo(dateOrListId, task.id, isSomeday);
   };
 
-  if (task.isSection) {
+  const handleOpenDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedTodo({
+      id: task.id,
+      dateOrListId,
+      isSomeday,
+    });
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteTodo(dateOrListId, task.id, isSomeday);
+  };
+
+  // Mobile Swipe Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+    setTouchEnd(null);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const currentTouch = e.targetTouches[0].clientX;
+    setTouchEnd(currentTouch);
+    
+    const diff = currentTouch - touchStart;
+    if (diff < 0 && diff > -100) {
+      setSwipeOffset(diff);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStart === null || touchEnd === null) return;
+    const diff = touchEnd - touchStart;
+    
+    if (diff < -50) {
+      setIsSwiped(true);
+      setSwipeOffset(-70); // Keep open to show edit/delete buttons
+    } else {
+      setIsSwiped(false);
+      setSwipeOffset(0);
+    }
+    
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
+  const resetSwipe = () => {
+    setIsSwiped(false);
+    setSwipeOffset(0);
+  };
+
+  const isSelected = selectedTodo?.id === task.id;
+
+  if (parsed.isHeading) {
     return (
-      <div className="group flex items-center py-1 px-2 mt-2 mb-0.5 bg-gray-100 -mx-1">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex-1">
-          {task.text}
-        </span>
-        <button
-          onClick={() => onDelete(task.id)}
-          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-gray-500 transition-opacity"
-        >
-          <X size={10} />
-        </button>
-      </div>
+      <li
+        ref={setNodeRef}
+        style={style}
+        className="todo__list-item is-heading group"
+        onDoubleClick={handleDoubleClick}
+        {...attributes}
+        {...listeners}
+      >
+        <div className="todo-content">
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              className="todo__input font-bold"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={handleKeyDown}
+            />
+          ) : (
+            <>
+              <h5 className="select-none flex-1 font-bold text-[10px] tracking-wider uppercase text-[var(--todo-header-text-color)] py-1">
+                {parsed.cleanText}
+              </h5>
+              <div className="todo-buttons group-hover:opacity-100 opacity-0 transition-opacity ml-2">
+                <button
+                  className="todo-buttons__button"
+                  title="Delete heading"
+                  onClick={handleDelete}
+                  type="button"
+                >
+                  <XIcon size={12} />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </li>
     );
   }
 
-  const bgStyle = task.color ? { backgroundColor: task.color } : {};
-
   return (
-    <div
-      draggable
-      onDragStart={handleDragStart}
-      style={bgStyle}
-      className={`group relative flex items-start py-1.5 px-1 transition-colors duration-100 cursor-grab active:cursor-grabbing border-b border-gray-100 ${
-        task.color ? 'rounded-sm' : 'hover:bg-gray-50'
-      } ${task.isCompleted ? 'opacity-40' : ''}`}
+    <li
+      ref={setNodeRef}
+      style={{
+        ...style,
+        transform: transform ? CSS.Transform.toString(transform) : undefined,
+        left: swipeOffset,
+      }}
+      className={`todo__list-item group relative select-none flex items-center transition-all duration-150 ${
+        isSelected ? 'bg-[var(--custom-color-light)]' : ''
+      }`}
+      onDoubleClick={handleDoubleClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      {...attributes}
+      {...listeners}
     >
-      <div
-        className="mt-0.5 mr-2 cursor-pointer flex-shrink-0"
-        onClick={handleToggleComplete}
-      >
-        {task.isCompleted ? (
-          <div className="w-3.5 h-3.5 border border-gray-300 flex items-center justify-center">
-            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-          </div>
-        ) : (
-          <div className="w-3.5 h-3.5 border border-gray-300 hover:border-gray-500 transition-colors" />
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0">
+      <div className="todo-content flex items-center w-full">
         {isEditing ? (
           <input
-            autoFocus
+            ref={inputRef}
             type="text"
-            className="w-full bg-transparent outline-none border-b border-gray-400 text-sm text-gray-800"
+            className="todo__input"
             value={editText}
             onChange={(e) => setEditText(e.target.value)}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
           />
         ) : (
-          <div
-            onClick={() => setIsEditing(true)}
-            className={`text-sm text-gray-800 cursor-text leading-snug ${
-              task.isCompleted ? 'line-through text-gray-400' : ''
-            } ${task.color ? 'font-medium' : ''}`}
-          >
-            <TaskText text={task.text} />
-          </div>
+          <>
+            <div className="todo__checkbox-wrapper mr-2 flex items-center justify-center">
+              <label htmlFor={`check-${task.id}`} className="sr-only">
+                Complete Todo
+              </label>
+              <input
+                id={`check-${task.id}`}
+                type="checkbox"
+                checked={task.done}
+                onChange={() => {}}
+                onClick={handleCheckboxClick}
+                className="todo__checkbox"
+              />
+            </div>
+
+            <div className="todo__label flex-shrink-0" />
+
+            <div
+              className={`todo-content__text flex-1 ${
+                task.done ? 'is-done text-[var(--todo-checkbox-done-color)] line-through' : ''
+              }`}
+              dangerouslySetInnerHTML={{ __html: parsed.html }}
+            />
+
+            {/* Note details indicator */}
+            {task.notes && (
+              <span className="text-xs text-[var(--custom-color)] opacity-70 mr-1.5 flex-shrink-0">
+                📝
+              </span>
+            )}
+
+            {/* Hover buttons */}
+            <div className="todo-buttons flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+              <button
+                className="todo-buttons__button ui-button--details"
+                title="Notes / Details"
+                onClick={handleOpenDetails}
+                type="button"
+              >
+                <NoteIcon size={12} />
+              </button>
+              <button
+                className="todo-buttons__button ui-button--delete"
+                title="Delete Todo"
+                onClick={handleDelete}
+                type="button"
+              >
+                <XIcon size={12} />
+              </button>
+            </div>
+
+            {/* Mobile swipe-revealed edit/delete buttons */}
+            {isSwiped && (
+              <div
+                className="absolute right-[-70px] top-0 bottom-0 flex items-center justify-center bg-red-500 text-white w-[70px] cursor-pointer"
+                onClick={handleDelete}
+              >
+                <XIcon size={16} />
+              </div>
+            )}
+          </>
         )}
       </div>
-
-      <div className="flex items-center gap-0.5 ml-1 flex-shrink-0 mt-0.5">
-        <button
-          onClick={handleToggleRecurring}
-          className={`transition-all ${
-            task.isRecurring
-              ? 'text-gray-500 opacity-100'
-              : 'opacity-0 group-hover:opacity-100 text-gray-200 hover:text-gray-500'
-          }`}
-          title="Toggle recurring"
-        >
-          <RefreshCw size={10} />
-        </button>
-
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowColorPicker(!showColorPicker); }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-          title="Set color"
-        >
-          <div
-            className="w-2.5 h-2.5 rounded-full border border-gray-300"
-            style={task.color ? { backgroundColor: task.color } : {}}
-          />
-        </button>
-
-        <button
-          onClick={() => onDelete(task.id)}
-          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-gray-500 transition-opacity"
-        >
-          <X size={12} />
-        </button>
-      </div>
-
-      {showColorPicker && (
-        <>
-          <div
-            className="fixed inset-0 z-[5]"
-            onClick={() => setShowColorPicker(false)}
-          />
-          <div className="absolute right-0 top-full z-10 bg-white border border-gray-200 p-1.5 flex gap-1 shadow-sm">
-            {COLOR_PALETTE.map((color) => (
-              <button
-                key={color}
-                onClick={() => handleColorSelect(color)}
-                className="w-4 h-4 rounded-full border border-gray-200 hover:scale-110 transition-transform"
-                style={{ backgroundColor: color }}
-              />
-            ))}
-            <button
-              onClick={() => handleColorSelect('')}
-              className="w-4 h-4 rounded-full border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
-              title="Remove color"
-            >
-              <X size={8} className="text-gray-400" />
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+    </li>
   );
 }
