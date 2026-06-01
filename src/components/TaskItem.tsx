@@ -5,6 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
 import { parseTodoText } from '@/lib/markdown';
+import { useTranslations } from '@/hooks/useTranslations';
 import { NoteIcon, XIcon } from './Icons';
 
 interface TaskItemProps {
@@ -15,6 +16,7 @@ interface TaskItemProps {
 
 export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProps) {
   const { toggleTodo, updateTodoText, deleteTodo, setSelectedTodo, selectedTodo } = useTodoStore();
+  const t = useTranslations();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(task.text);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -163,7 +165,7 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
               <div className="todo-buttons group-hover:opacity-100 opacity-0 transition-opacity ml-2">
                 <button
                   className="todo-buttons__button"
-                  title="Delete heading"
+                  title={t.deleteHeading}
                   onClick={handleDelete}
                   type="button"
                 >
@@ -210,7 +212,7 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
           <>
             <div className="todo__checkbox-wrapper mr-2 flex items-center justify-center">
               <label htmlFor={`check-${task.id}`} className="sr-only">
-                Complete Todo
+                {t.completeTodo}
               </label>
               <input
                 id={`check-${task.id}`}
@@ -225,24 +227,21 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
             <div className="todo__label flex-shrink-0" />
 
             <div
-              className={`todo-content__text flex-1 ${
-                task.done ? 'is-done text-[var(--todo-checkbox-done-color)] line-through' : ''
+              className={`todo-content__text ${
+                task.done ? 'is-done' : ''
               }`}
+              title={task.text}
               dangerouslySetInnerHTML={{ __html: parsed.html }}
             />
 
-            {/* Note details indicator */}
-            {task.notes && (
-              <span className="text-xs text-[var(--custom-color)] opacity-70 mr-1.5 flex-shrink-0">
-                📝
-              </span>
-            )}
-
-            {/* Hover buttons */}
-            <div className="todo-buttons flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            {/* Hover buttons — absolutely positioned to avoid compressing text */}
+            <div className="todo-buttons">
+              {task.notes && (
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--custom-color)] opacity-70 mr-0.5 self-center" />
+              )}
               <button
                 className="todo-buttons__button ui-button--details"
-                title="Notes / Details"
+                title={t.notesDetails}
                 onClick={handleOpenDetails}
                 type="button"
               >
@@ -250,7 +249,7 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
               </button>
               <button
                 className="todo-buttons__button ui-button--delete"
-                title="Delete Todo"
+                title={t.deleteTodo}
                 onClick={handleDelete}
                 type="button"
               >

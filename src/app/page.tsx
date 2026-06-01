@@ -14,6 +14,7 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
 import { getWeekDays, getTodayStartDays, formatDateKey } from '@/lib/dateUtils';
 import { parseTodoText } from '@/lib/markdown';
+import { useTranslations } from '@/hooks/useTranslations';
 
 // Components
 import DayColumn from '@/components/DayColumn';
@@ -51,7 +52,11 @@ export default function Home() {
     instantiateRecurringTodos,
     selectedTodo,
     addSomedayList,
+    language,
+    setLanguage,
   } = useTodoStore();
+
+  const t = useTranslations();
 
   const [viewDate, setViewDate] = useState<Date>(() => new Date());
   
@@ -229,7 +234,7 @@ export default function Home() {
 
   // Reset dashboard state
   const handleResetData = () => {
-    if (confirm('Are you sure you want to clear all list data and settings? This cannot be undone.')) {
+    if (confirm(t.confirmReset)) {
       localStorage.clear();
       window.location.reload();
     }
@@ -274,7 +279,7 @@ export default function Home() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search todos..."
+              placeholder={t.searchPlaceholder}
               className="flex-1 bg-transparent border-none text-sm text-[var(--todo-text-color)] outline-none placeholder-[var(--todo-past-text-color)] font-medium"
             />
             <button
@@ -293,7 +298,7 @@ export default function Home() {
             <div className="w-full max-w-2xl mx-auto bg-[var(--app-background)] border border-[var(--todo-border-color)] rounded-lg shadow-xl max-h-[300px] overflow-y-auto divide-y divide-[var(--todo-border-color)]">
               {searchResults.length === 0 ? (
                 <div className="p-4 text-xs text-[var(--todo-past-text-color)] text-center">
-                  No matching tasks found
+                  {t.searchNoResults}
                 </div>
               ) : (
                 searchResults.map((res, i) => (
@@ -315,7 +320,7 @@ export default function Home() {
                   >
                     <p className="font-semibold text-[var(--todo-text-color)]">{res.todo.text}</p>
                     <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--custom-color)]">
-                      {res.isSomeday ? `Someday List: ${res.dateOrList}` : `Calendar: ${res.dateOrList}`}
+                      {res.isSomeday ? `${t.searchResultSomeday}: ${res.dateOrList}` : `${t.searchResultCalendar}: ${res.dateOrList}`}
                     </span>
                   </div>
                 ))
@@ -347,7 +352,7 @@ export default function Home() {
             <button
               onClick={() => setShowSearch(!showSearch)}
               className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-all"
-              title="Search tasks"
+              title={t.searchTasks}
               type="button"
             >
               <SearchIcon size={18} />
@@ -356,14 +361,14 @@ export default function Home() {
               type="text"
               value={workspaceName}
               onChange={(e) => setWorkspaceName(e.target.value)}
-              placeholder="Click to name your workspace"
+              placeholder={t.workspacePlaceholder}
               className="bg-transparent border-none outline-none font-semibold text-xs tracking-wider text-[var(--todo-past-text-color)] placeholder-[var(--todo-past-text-color)]/50 focus:placeholder-transparent transition-all w-48 text-left"
             />
           </div>
 
           {/* Center: Brand Logo */}
           <div className="header-logo select-none">
-            TEUXDEUX<span>.</span>
+            NEXXXT<span>.</span>
           </div>
 
           {/* Right: Weeks Navigation Controls */}
@@ -371,7 +376,7 @@ export default function Home() {
             <button
               onClick={() => navigateWeeks(-1)}
               className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors"
-              title="Previous Week"
+              title={t.previousWeek}
               type="button"
             >
               <ChevronLeftDouble size={16} />
@@ -379,7 +384,7 @@ export default function Home() {
             <button
               onClick={() => navigateDays(-1)}
               className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors"
-              title="Previous Day"
+              title={t.previousDay}
               type="button"
             >
               <ChevronLeft size={16} />
@@ -388,16 +393,16 @@ export default function Home() {
             <button
               onClick={() => setViewDate(new Date())}
               className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] hover:bg-[var(--timer-bg)] rounded transition-colors"
-              title="Go to Today"
+              title={t.goToToday}
               type="button"
             >
-              TODAY
+              {t.today}
             </button>
 
             <button
               onClick={() => navigateDays(1)}
               className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors"
-              title="Next Day"
+              title={t.nextDay}
               type="button"
             >
               <ChevronRight size={16} />
@@ -405,7 +410,7 @@ export default function Home() {
             <button
               onClick={() => navigateWeeks(1)}
               className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors"
-              title="Next Week"
+              title={t.nextWeek}
               type="button"
             >
               <ChevronRightDouble size={16} />
@@ -415,7 +420,7 @@ export default function Home() {
             <button
               onClick={() => dateInputRef.current?.showPicker()}
               className="p-1 rounded hover:bg-[var(--timer-bg)] text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors ml-1"
-              title="Choose date"
+              title={t.chooseDate}
               type="button"
             >
               <CalendarIcon size={16} />
@@ -448,7 +453,7 @@ export default function Home() {
             <nav className="someday-list-tabs">
               <div className="someday-list-tabs__tabs">
                 <div className="someday-list-tabs__tab someday-list-tabs__tab--active">
-                  <span>SOMEDAY LISTS</span>
+                  <span>{t.somedayLists}</span>
                   <span className="someday-list-tabs__number">
                     {somedayLists.reduce((acc, curr) => acc + curr.items.length, 0)}
                   </span>
@@ -459,7 +464,7 @@ export default function Home() {
               <button
                 onClick={handleCreateList}
                 className="someday-list-tabs__add"
-                title="Create Someday List"
+                title={t.createList}
                 type="button"
               >
                 +
@@ -471,7 +476,7 @@ export default function Home() {
               onClick={() => setIsSomedayCollapsed(!isSomedayCollapsed)}
               className="someday-collapse__icon"
               style={{ transform: isSomedayCollapsed ? 'rotate(180deg)' : 'none' }}
-              title={isSomedayCollapsed ? 'Expand Someday' : 'Collapse Someday'}
+              title={isSomedayCollapsed ? t.expandSomeday : t.collapseSomeday}
               type="button"
             >
               ▼
@@ -499,7 +504,7 @@ export default function Home() {
                     type="button"
                   >
                     <span className="text-3xl">+</span>
-                    New List
+                    {t.newList}
                   </button>
                 </div>
               </div>
@@ -513,12 +518,12 @@ export default function Home() {
             
             {/* Left: Preferences / Clear Reset Actions */}
             <div className="flex items-center gap-2">
-              <button onClick={handleResetData} title="Reset Data" type="button">
+              <button onClick={handleResetData} title={t.resetData} type="button">
                 <RotateCcwIcon size={16} />
               </button>
               <button
                 onClick={() => setIsRecurringOpen(true)}
-                title="Manage Recurring Tasks"
+                title={t.recurringTasks}
                 type="button"
               >
                 <RecurringIcon size={16} />
@@ -570,31 +575,39 @@ export default function Home() {
               <button
                 onClick={() => setInFocusMode(!inFocusMode)}
                 className={inFocusMode ? 'active' : ''}
-                title="Focus Mode"
+                title={t.focusMode}
                 type="button"
               >
-                Focus
+                {t.focusMode}
               </button>
             </div>
 
-            {/* Right: Dark mode toggle & external controls */}
+            {/* Right: Language toggle, dark mode, Go Pro (disabled), settings */}
             <div className="flex items-center gap-3">
               <button
+                onClick={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
+                title={t.languageToggle}
+                type="button"
+                className="text-base leading-none"
+              >
+                {language === 'pt' ? '🇧🇷' : '🇺🇸'}
+              </button>
+              <button
                 onClick={() => setDarkMode(!darkMode)}
-                title="Toggle Dark Mode"
+                title={t.toggleDarkMode}
                 type="button"
               >
                 {darkMode ? <LightModeIcon size={16} /> : <DarkModeIcon size={16} />}
               </button>
-              <a
-                href="https://teuxdeux.com"
-                target="_blank"
-                rel="noreferrer"
-                className="ui-button--cta ui-button--dark flex items-center justify-center h-[26px]"
+              <button
+                disabled
+                title={t.comingSoon}
+                className="ui-button--cta ui-button--dark flex items-center justify-center h-[26px] opacity-50 cursor-default"
+                type="button"
               >
-                Go Pro
-              </a>
-              <button title="Settings" type="button">
+                {t.goPro}
+              </button>
+              <button title={t.settings} type="button">
                 <UserIcon size={16} />
               </button>
             </div>

@@ -5,6 +5,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
 import { formatDateKey } from '@/lib/dateUtils';
+import { useTranslations } from '@/hooks/useTranslations';
 import TaskItem from './TaskItem';
 
 interface DayColumnProps {
@@ -14,6 +15,7 @@ interface DayColumnProps {
 
 export default function DayColumn({ date, tasks }: DayColumnProps) {
   const { addTodo } = useTodoStore();
+  const t = useTranslations();
   const [newText, setNewText] = useState('');
   const dateKey = formatDateKey(date);
 
@@ -30,11 +32,11 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
   const isPast = date < new Date(today.setHours(0, 0, 0, 0));
 
   // Date styling
-  const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  const month = t.months[date.getMonth()];
   const dayNum = date.getDate();
   const year = date.getFullYear();
   const dateString = `${month} ${dayNum}, ${year}`;
-  const dayName = date.toLocaleString('en-US', { weekday: 'long' }).toUpperCase();
+  const dayName = t.days[date.getDay()];
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +87,7 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
         <form onSubmit={handleAdd} className="mt-auto px-5 mb-4">
           <div className="todo-content todo-content--create">
             <div className="todo__label w-full">
-              <span className="sr-only">Type in your todo</span>
+              <span className="sr-only">{t.addTodoPlaceholder}</span>
               <input
                 type="text"
                 value={newText}

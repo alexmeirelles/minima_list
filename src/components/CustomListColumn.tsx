@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
+import { useTranslations } from '@/hooks/useTranslations';
 import TaskItem from './TaskItem';
 import { XIcon, VerticalDotsIcon } from './Icons';
 
@@ -15,6 +16,7 @@ interface CustomListColumnProps {
 
 export default function CustomListColumn({ listId, name, items }: CustomListColumnProps) {
   const { addTodo, renameSomedayList, deleteSomedayList } = useTodoStore();
+  const t = useTranslations();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleText, setTitleText] = useState(name);
   const [newText, setNewText] = useState('');
@@ -84,7 +86,7 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
   };
 
   const handleDeleteListClick = () => {
-    if (confirm(`Delete the list "${name}" and all its tasks?`)) {
+    if (confirm(t.confirmDeleteList(name))) {
       deleteSomedayList(listId);
     }
   };
@@ -107,7 +109,7 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
             <h2
               className="todo__title truncate cursor-pointer text-left hover:text-[var(--custom-color)] transition-colors"
               onClick={() => setIsEditingTitle(true)}
-              title="Click to rename"
+              title={t.clickToRename}
             >
               {name}
             </h2>
@@ -134,7 +136,7 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
                 className="w-full text-left px-3 py-1.5 text-xs text-[var(--todo-text-color)] hover:bg-[var(--timer-bg)]"
                 type="button"
               >
-                Rename List
+                {t.renameList}
               </button>
               <button
                 onClick={() => {
@@ -144,7 +146,7 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
                 className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-[var(--timer-bg)] font-medium"
                 type="button"
               >
-                Delete List
+                {t.deleteList}
               </button>
             </div>
           )}
@@ -173,7 +175,7 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
         <form onSubmit={handleAdd} className="mt-auto px-5 mb-4">
           <div className="todo-content todo-content--create">
             <div className="todo__label w-full">
-              <span className="sr-only">Type in your todo</span>
+              <span className="sr-only">{t.addTodoPlaceholder}</span>
               <input
                 type="text"
                 value={newText}

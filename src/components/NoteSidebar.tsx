@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
+import { useTranslations } from '@/hooks/useTranslations';
 import { XIcon, ClockIcon } from './Icons';
 
 export default function NoteSidebar() {
@@ -16,6 +17,7 @@ export default function NoteSidebar() {
     deleteRecurringTemplate,
   } = useTodoStore();
 
+  const t = useTranslations();
   const [notesText, setNotesText] = useState('');
   const [todoItem, setTodoItem] = useState<TodoItem | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -92,13 +94,13 @@ export default function NoteSidebar() {
     }
 
     addRecurringTemplate(todoItem.text, pattern, dayOfWeek);
-    alert(`Created recurring task: "${todoItem.text}" (${pattern})`);
+    alert(t.recurringCreated(todoItem.text, pattern));
   };
 
   const handleRemoveRecurring = () => {
     if (activeTemplate) {
       deleteRecurringTemplate(activeTemplate.id);
-      alert('Removed recurring template');
+      alert(t.recurringRemoved);
     }
   };
 
@@ -107,7 +109,7 @@ export default function NoteSidebar() {
       {/* Header */}
       <header className="h-[44px] px-4 border-b border-[var(--todo-border-color)] flex items-center justify-between bg-[var(--someday-list-background)]">
         <span className="text-xs font-bold uppercase tracking-wider text-[var(--todo-past-text-color)]">
-          Todo Details & Notes
+          {t.todoDetails}
         </span>
         <button
           onClick={() => setSelectedTodo(null)}
@@ -123,7 +125,7 @@ export default function NoteSidebar() {
         {/* Title */}
         <div>
           <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] mb-2">
-            Task Name
+            {t.taskName}
           </h4>
           <p className="text-sm font-semibold text-[var(--todo-text-color)] break-words leading-relaxed">
             {todoItem.text}
@@ -136,43 +138,43 @@ export default function NoteSidebar() {
             htmlFor="sidebar-notes"
             className="text-xs font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] mb-2"
           >
-            Notes / Description
+            {t.notesDescription}
           </label>
           <textarea
             id="sidebar-notes"
             value={notesText}
             onChange={(e) => handleNotesChange(e.target.value)}
-            placeholder="Add some details, links, or sub-tasks here..."
+            placeholder={t.addDetails}
             className="flex-1 w-full bg-[var(--someday-list-background)] border border-[var(--todo-border-color)] rounded-lg p-3 text-sm text-[var(--todo-text-color)] placeholder-[var(--todo-past-text-color)] outline-none resize-none focus:border-[var(--custom-color)] focus:ring-1 focus:ring-[var(--custom-color)] transition-all font-mono"
           />
           <div className="text-[10px] text-[var(--todo-past-text-color)] mt-1.5 text-right font-medium">
-            Autosaved as you type
+            {t.autosaved}
           </div>
         </div>
 
         {/* Recurring Tasks setup */}
         <div className="border-t border-[var(--todo-border-color)] pt-4 mt-auto">
           <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] mb-3 flex items-center gap-1.5">
-            <ClockIcon size={13} /> Recurring Settings
+            <ClockIcon size={13} /> {t.recurringSettings}
           </h4>
 
           {activeTemplate ? (
             <div className="bg-[var(--custom-color-light)] border border-[var(--custom-color)]/20 p-3 rounded-lg flex flex-col gap-2">
               <p className="text-xs text-[var(--todo-text-color)] font-medium">
-                Active template: <span className="font-bold uppercase">{activeTemplate.pattern}</span>
+                {t.activeTemplate} <span className="font-bold uppercase">{activeTemplate.pattern}</span>
               </p>
               <button
                 onClick={handleRemoveRecurring}
                 className="text-xs text-red-500 font-bold uppercase hover:underline text-left mt-1"
                 type="button"
               >
-                Disable Recurring
+                {t.disableRecurring}
               </button>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
               <p className="text-xs text-[var(--todo-past-text-color)] mb-1 leading-normal">
-                Make this task repeat automatically in your calendar. Choose a template pattern:
+                {t.makeRecurringDesc}
               </p>
               <div className="grid grid-cols-3 gap-1.5">
                 <button
@@ -180,21 +182,21 @@ export default function NoteSidebar() {
                   className="px-2 py-1.5 border border-[var(--todo-border-color)] rounded text-xs font-semibold hover:border-[var(--custom-color)] hover:text-[var(--custom-color)] transition-all bg-[var(--app-background)]"
                   type="button"
                 >
-                  Daily
+                  {t.daily}
                 </button>
                 <button
                   onClick={() => handleMakeRecurring('weekdays')}
                   className="px-2 py-1.5 border border-[var(--todo-border-color)] rounded text-xs font-semibold hover:border-[var(--custom-color)] hover:text-[var(--custom-color)] transition-all bg-[var(--app-background)]"
                   type="button"
                 >
-                  Weekdays
+                  {t.weekdays}
                 </button>
                 <button
                   onClick={() => handleMakeRecurring('weekly')}
                   className="px-2 py-1.5 border border-[var(--todo-border-color)] rounded text-xs font-semibold hover:border-[var(--custom-color)] hover:text-[var(--custom-color)] transition-all bg-[var(--app-background)]"
                   type="button"
                 >
-                  Weekly
+                  {t.weekly}
                 </button>
               </div>
             </div>

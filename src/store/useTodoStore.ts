@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { Language } from '@/lib/i18n';
 
 export interface TodoItem {
   id: string;
@@ -35,6 +36,7 @@ interface TodoState {
   workspaceName: string;
   selectedTodo: { id: string; dateOrListId: string; isSomeday: boolean } | null;
   activeSomedayListId: string | null;
+  language: Language;
 
   // Actions
   addTodo: (dateOrListId: string, text: string, isSomeday: boolean) => string;
@@ -64,6 +66,7 @@ interface TodoState {
   setInFocusMode: (focus: boolean) => void;
   setWorkspaceName: (name: string) => void;
   setSelectedTodo: (todo: { id: string; dateOrListId: string; isSomeday: boolean } | null) => void;
+  setLanguage: (lang: Language) => void;
 
   // Recurring Actions
   addRecurringTemplate: (text: string, pattern: RecurringTemplate['pattern'], dayOfWeek?: number) => void;
@@ -85,6 +88,7 @@ export const useTodoStore = create<TodoState>()(
       workspaceName: '',
       selectedTodo: null,
       activeSomedayListId: 'someday-default',
+      language: 'pt' as Language,
 
       addTodo: (dateOrListId, text, isSomeday) => {
         const id = crypto.randomUUID();
@@ -387,6 +391,10 @@ export const useTodoStore = create<TodoState>()(
         set({ selectedTodo: todo });
       },
 
+      setLanguage: (lang) => {
+        set({ language: lang });
+      },
+
       addRecurringTemplate: (text, pattern, dayOfWeek) => {
         const id = crypto.randomUUID();
         set((state) => ({
@@ -462,6 +470,7 @@ export const useTodoStore = create<TodoState>()(
         gridColumnSize: state.gridColumnSize,
         inFocusMode: state.inFocusMode,
         workspaceName: state.workspaceName,
+        language: state.language,
       }),
     }
   )
