@@ -63,7 +63,7 @@ export default function CustomListColumn({
             />
           ) : (
             <h3
-              className="text-[11px] font-bold uppercase tracking-widest text-gray-500 cursor-pointer hover:text-gray-800 transition-colors truncate"
+              className="text-xs font-bold uppercase tracking-widest text-gray-600 cursor-pointer hover:text-gray-900 transition-colors truncate"
               onClick={() => setIsEditingTitle(true)}
               title="Click to rename"
             >

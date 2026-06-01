@@ -17,6 +17,16 @@ export const getWeekDays = (startDate: Date): Date[] => {
   return days;
 };
 
+export const getTodayStartDays = (today: Date, count = 5): Date[] => {
+  const days: Date[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    days.push(d);
+  }
+  return days;
+};
+
 export const isSameDay = (d1: Date, d2: Date): boolean => {
   return (
     d1.getDate() === d2.getDate() &&

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   collection,
   addDoc,
@@ -25,6 +25,7 @@ export function useFirestore(uid: string | undefined) {
   const [lists, setLists] = useState<TaskList[]>([]);
   const [userName, setUserName] = useState('USER');
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const rolloverDone = useRef(false);
 
   // Initialize default data (GTD) on first login
   useEffect(() => {
@@ -134,6 +135,24 @@ export function useFirestore(uid: string | undefined) {
     (taskId: string, newListId: string) => updateTask(taskId, { listId: newListId }),
     [updateTask]
   );
+
+  // Auto-rollover: move incomplete past-day tasks to today on first load
+  useEffect(() => {
+    if (rolloverDone.current || !uid || tasks.length === 0) return;
+    rolloverDone.current = true;
+    const todayKey = new Date().toISOString().split('T')[0];
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    tasks.forEach((task) => {
+      if (
+        datePattern.test(task.listId) &&
+        task.listId < todayKey &&
+        !task.isCompleted &&
+        !task.isSection
+      ) {
+        updateTask(task.id, { listId: todayKey });
+      }
+    });
+  }, [tasks, uid, updateTask]);
 
   // Groups
   const addGroup = useCallback(
