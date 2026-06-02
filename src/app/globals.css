@@ -348,13 +348,23 @@ body {
 /* Todo Creation Row */
 .todo-content--create {
   border-top: 1px solid var(--todo-border-color);
-  opacity: 0.5;
+  opacity: 0.75;
   transition: opacity 0.2s;
+  gap: 6px;
 }
 
 .todo-content--create:hover,
 .todo-content--create:focus-within {
   opacity: 1;
+}
+
+.todo-content--create__plus {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--custom-color);
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 1px;
 }
 
 .todo__input {

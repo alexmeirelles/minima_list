@@ -174,17 +174,15 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
         {/* Create Todo Item Row */}
         <form onSubmit={handleAdd} className="mt-auto px-5 mb-4">
           <div className="todo-content todo-content--create">
-            <div className="todo__label w-full">
-              <span className="sr-only">{t.addTodoPlaceholder}</span>
-              <input
-                type="text"
-                value={newText}
-                onChange={(e) => setNewText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder=""
-                className="todo__input"
-              />
-            </div>
+            <span className="todo-content--create__plus">+</span>
+            <input
+              type="text"
+              value={newText}
+              onChange={(e) => setNewText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t.addTodoPlaceholder}
+              className="todo__input"
+            />
           </div>
         </form>
       </div>
