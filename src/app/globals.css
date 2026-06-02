@@ -154,7 +154,24 @@ body {
 .calendar-grid {
   display: flex;
   height: 100%;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(24px); opacity: 0.4; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-24px); opacity: 0.4; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+.calendar-slide-right {
+  animation: slideInRight 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.calendar-slide-left {
+  animation: slideInLeft 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .todo {

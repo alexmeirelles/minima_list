@@ -59,7 +59,8 @@ export default function Home() {
   const t = useTranslations();
 
   const [viewDate, setViewDate] = useState<Date>(() => new Date());
-  
+  const [slideDir, setSlideDir] = useState<'left' | 'right'>('right');
+
   // Modals / Panels states
   const [isRecurringOpen, setIsRecurringOpen] = useState(false);
   const [isSomedayCollapsed, setIsSomedayCollapsed] = useState(false);
@@ -133,12 +134,14 @@ export default function Home() {
   }, [displayedDays, instantiateRecurringTodos]);
 
   const navigateDays = (delta: number) => {
+    setSlideDir(delta > 0 ? 'right' : 'left');
     const next = new Date(viewDate);
     next.setDate(viewDate.getDate() + delta);
     setViewDate(next);
   };
 
   const navigateWeeks = (delta: number) => {
+    setSlideDir(delta > 0 ? 'right' : 'left');
     const next = new Date(viewDate);
     next.setDate(viewDate.getDate() + delta * 7);
     setViewDate(next);
@@ -391,7 +394,7 @@ export default function Home() {
             </button>
 
             <button
-              onClick={() => setViewDate(new Date())}
+              onClick={() => { setSlideDir('right'); setViewDate(new Date()); }}
               className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] hover:bg-[var(--timer-bg)] rounded transition-colors"
               title={t.goToToday}
               type="button"
@@ -433,7 +436,10 @@ export default function Home() {
           
           {/* CALENDAR SECTION (TOP HALF) */}
           <section className="calendar-section">
-            <div className="calendar-grid min-w-full">
+            <div
+              key={displayedDays[0]?.toISOString()}
+              className={`calendar-grid min-w-full calendar-slide-${slideDir}`}
+            >
               {displayedDays.map((date) => {
                 const dateKey = formatDateKey(date);
                 const dayTasks = todos[dateKey] || [];

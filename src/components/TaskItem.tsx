@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
 import { parseTodoText } from '@/lib/markdown';
 import { useTranslations } from '@/hooks/useTranslations';
-import { NoteIcon, XIcon } from './Icons';
+import { NoteIcon, XIcon, EditIcon } from './Icons';
 
 interface TaskItemProps {
   task: TodoItem;
@@ -239,6 +239,14 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
               {task.notes && (
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--custom-color)] opacity-70 mr-0.5 self-center" />
               )}
+              <button
+                className="todo-buttons__button ui-button--edit"
+                title={t.editTodo}
+                onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                type="button"
+              >
+                <EditIcon size={12} />
+              </button>
               <button
                 className="todo-buttons__button ui-button--details"
                 title={t.notesDetails}
