@@ -12,8 +12,8 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
-import { getWeekDays, getTodayStartDays, formatDateKey } from '@/lib/dateUtils';
-import { parseTodoText } from '@/lib/markdown';
+import { formatDateKey } from '@/lib/dateUtils';
+import { stripMarkdown } from '@/lib/markdown';
 import { useTranslations } from '@/hooks/useTranslations';
 
 // Components
@@ -21,6 +21,8 @@ import DayColumn from '@/components/DayColumn';
 import CustomListColumn from '@/components/CustomListColumn';
 import NoteSidebar from '@/components/NoteSidebar';
 import RecurringModal from '@/components/RecurringModal';
+import FocusMode from '@/components/FocusMode';
+import { InputModal, ConfirmModal, InfoModal } from '@/components/Modal';
 import {
   SearchIcon,
   CalendarIcon,
@@ -33,6 +35,7 @@ import {
   RecurringIcon,
   UserIcon,
   RotateCcwIcon,
+  HelpIcon,
   XIcon,
 } from '@/components/Icons';
 
@@ -52,6 +55,7 @@ export default function Home() {
     instantiateRecurringTodos,
     selectedTodo,
     addSomedayList,
+    seedOnboarding,
     language,
     setLanguage,
   } = useTodoStore();
@@ -65,6 +69,9 @@ export default function Home() {
   const [isRecurringOpen, setIsRecurringOpen] = useState(false);
   const [isSomedayCollapsed, setIsSomedayCollapsed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [showNewListModal, setShowNewListModal] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Search state
   const [showSearch, setShowSearch] = useState(false);
@@ -90,6 +97,11 @@ export default function Home() {
     }
   }, [showSearch]);
 
+  // First-load onboarding: seed today's tip tasks + example Someday lists
+  useEffect(() => {
+    seedOnboarding(formatDateKey(new Date()));
+  }, [seedOnboarding]);
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -102,30 +114,33 @@ export default function Home() {
     })
   );
 
-  // Generate displayed days based on viewDate and column setting
+  // Generate displayed days: the view is centered on `viewDate` (today by default),
+  // shown as the FIRST column, followed by the next days (TeuxDeux behaviour).
   const displayedDays = useMemo(() => {
-    const startOfWeek = new Date(viewDate);
-    // Align with Monday
-    const day = startOfWeek.getDay();
-    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
-    startOfWeek.setDate(diff);
-
-    const daysList: Date[] = [];
-    
-    // Focus Mode displays only today/viewDate
+    // Focus Mode displays only the current viewDate
     if (inFocusMode) {
       return [viewDate];
     }
 
-    // Standard column counts: 1, 3, 5, or 7
-    const count = gridColumnSize;
+    const daysList: Date[] = [];
+    const count = gridColumnSize; // 1, 3, 5 or 7
     for (let i = 0; i < count; i++) {
-      const d = new Date(startOfWeek);
-      d.setDate(startOfWeek.getDate() + i);
+      const d = new Date(viewDate);
+      d.setDate(viewDate.getDate() + i);
       daysList.push(d);
     }
     return daysList;
   }, [viewDate, gridColumnSize, inFocusMode]);
+
+  // Is the leftmost displayed day today? (controls the HOJE button visibility)
+  const isViewingToday = useMemo(() => {
+    const today = new Date();
+    return (
+      viewDate.getDate() === today.getDate() &&
+      viewDate.getMonth() === today.getMonth() &&
+      viewDate.getFullYear() === today.getFullYear()
+    );
+  }, [viewDate]);
 
   // Instantiate recurring tasks whenever visible dates change
   useEffect(() => {
@@ -189,13 +204,15 @@ export default function Home() {
     const activePath = findTodoPath(activeTodoId);
     if (!activePath) return;
 
-    // Check if dropping onto a container column (empty column zone or list header zone)
-    const isOverContainer =
-      todos[overId] !== undefined ||
-      somedayLists.some((l) => l.id === overId);
+    // Check if dropping onto a container column itself (rather than onto a task).
+    // A calendar day container id is an ISO date key (YYYY-MM-DD) — it may not yet
+    // exist in `todos` when the day is empty, so match on the id shape too.
+    const isOverDayColumn = /^\d{4}-\d{2}-\d{2}$/.test(overId);
+    const isOverSomedayList = somedayLists.some((l) => l.id === overId);
+    const isOverContainer = isOverDayColumn || isOverSomedayList;
 
     if (isOverContainer) {
-      const isTargetSomeday = somedayLists.some((l) => l.id === overId);
+      const isTargetSomeday = isOverSomedayList;
       // Move to end of target container
       moveTodo(
         activePath.containerId,
@@ -227,20 +244,19 @@ export default function Home() {
     return path ? path.item : null;
   }, [activeId]);
 
-  // Create new list
+  // Create new list — opens the in-app modal (no native prompt())
   const handleCreateList = () => {
-    const name = prompt('Enter the name of your new Someday list:');
-    if (name?.trim()) {
-      addSomedayList(name.trim());
-    }
+    setShowNewListModal(true);
   };
 
-  // Reset dashboard state
+  // Reset dashboard state — opens the in-app confirm modal (no native confirm())
   const handleResetData = () => {
-    if (confirm(t.confirmReset)) {
-      localStorage.clear();
-      window.location.reload();
-    }
+    setShowResetConfirm(true);
+  };
+
+  const confirmResetData = () => {
+    localStorage.clear();
+    window.location.reload();
   };
 
   // Filter lists based on Search Query
@@ -321,7 +337,7 @@ export default function Home() {
                     }}
                     className="p-3 text-sm text-left hover:bg-[var(--someday-list-background)] cursor-pointer flex flex-col gap-1 transition-all"
                   >
-                    <p className="font-semibold text-[var(--todo-text-color)]">{res.todo.text}</p>
+                    <p className="font-semibold text-[var(--todo-text-color)]">{stripMarkdown(res.todo.text)}</p>
                     <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--custom-color)]">
                       {res.isSomeday ? `${t.searchResultSomeday}: ${res.dateOrList}` : `${t.searchResultCalendar}: ${res.dateOrList}`}
                     </span>
@@ -393,14 +409,16 @@ export default function Home() {
               <ChevronLeft size={16} />
             </button>
 
-            <button
-              onClick={() => { setSlideDir('right'); setViewDate(new Date()); }}
-              className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] hover:bg-[var(--timer-bg)] rounded transition-colors"
-              title={t.goToToday}
-              type="button"
-            >
-              {t.today}
-            </button>
+            {!isViewingToday && (
+              <button
+                onClick={() => { setSlideDir('left'); setViewDate(new Date()); }}
+                className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--custom-color)] hover:brightness-110 hover:bg-[var(--timer-bg)] rounded transition-colors"
+                title={t.goToToday}
+                type="button"
+              >
+                {t.today}
+              </button>
+            )}
 
             <button
               onClick={() => navigateDays(1)}
@@ -616,6 +634,9 @@ export default function Home() {
               <button title={t.settings} type="button">
                 <UserIcon size={16} />
               </button>
+              <button onClick={() => setShowHelp(true)} title={t.help} type="button">
+                <HelpIcon size={16} />
+              </button>
             </div>
           </div>
         </footer>
@@ -643,6 +664,45 @@ export default function Home() {
 
       {/* Modal to manage all repeating tasks templates */}
       <RecurringModal isOpen={isRecurringOpen} onClose={() => setIsRecurringOpen(false)} />
+
+      {/* Full-screen Focus Mode overlay with Pomodoro timer */}
+      {inFocusMode && (
+        <FocusMode date={viewDate} onExit={() => setInFocusMode(false)} />
+      )}
+
+      {/* New Someday list modal (replaces native prompt) */}
+      {showNewListModal && (
+        <InputModal
+          title={t.newListTitle}
+          placeholder={t.newListPlaceholder}
+          confirmLabel={t.createBtn}
+          cancelLabel={t.cancelBtn}
+          onConfirm={(name) => addSomedayList(name)}
+          onClose={() => setShowNewListModal(false)}
+        />
+      )}
+
+      {/* Reset data confirmation modal (replaces native confirm) */}
+      {showResetConfirm && (
+        <ConfirmModal
+          title={t.resetTitle}
+          message={t.confirmReset}
+          confirmLabel={t.resetConfirm}
+          cancelLabel={t.cancelBtn}
+          onConfirm={confirmResetData}
+          onClose={() => setShowResetConfirm(false)}
+        />
+      )}
+
+      {/* Help modal */}
+      {showHelp && (
+        <InfoModal
+          title={t.helpTitle}
+          items={t.helpItems}
+          closeLabel={t.closeBtn}
+          onClose={() => setShowHelp(false)}
+        />
+      )}
     </div>
   );
 }

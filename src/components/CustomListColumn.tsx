@@ -6,7 +6,8 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
 import { useTranslations } from '@/hooks/useTranslations';
 import TaskItem from './TaskItem';
-import { XIcon, VerticalDotsIcon } from './Icons';
+import { VerticalDotsIcon } from './Icons';
+import { ConfirmModal } from './Modal';
 
 interface CustomListColumnProps {
   listId: string;
@@ -21,6 +22,7 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
   const [titleText, setTitleText] = useState(name);
   const [newText, setNewText] = useState('');
   const [showMenu, setShowMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const titleInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -86,9 +88,7 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
   };
 
   const handleDeleteListClick = () => {
-    if (confirm(t.confirmDeleteList(name))) {
-      deleteSomedayList(listId);
-    }
+    setShowDeleteConfirm(true);
   };
 
   return (
@@ -186,6 +186,17 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
           </div>
         </form>
       </div>
+
+      {showDeleteConfirm && (
+        <ConfirmModal
+          title={t.deleteListTitle}
+          message={t.confirmDeleteList(name)}
+          confirmLabel={t.deleteConfirm}
+          cancelLabel={t.cancelBtn}
+          onConfirm={() => deleteSomedayList(listId)}
+          onClose={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   );
 }

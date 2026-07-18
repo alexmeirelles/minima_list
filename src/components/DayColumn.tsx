@@ -35,8 +35,8 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
   const month = t.months[date.getMonth()];
   const dayNum = date.getDate();
   const year = date.getFullYear();
-  const dateString = `${month} ${dayNum}, ${year}`;
-  const dayName = t.days[date.getDay()];
+  const dateString = t.formatSmallDate(dayNum, month, year);
+  const dayName = t.daysLong[date.getDay()];
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();

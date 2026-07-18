@@ -37,6 +37,7 @@ interface TodoState {
   selectedTodo: { id: string; dateOrListId: string; isSomeday: boolean } | null;
   activeSomedayListId: string | null;
   language: Language;
+  hasSeeded: boolean;
 
   // Actions
   addTodo: (dateOrListId: string, text: string, isSomeday: boolean) => string;
@@ -72,6 +73,9 @@ interface TodoState {
   addRecurringTemplate: (text: string, pattern: RecurringTemplate['pattern'], dayOfWeek?: number) => void;
   deleteRecurringTemplate: (id: string) => void;
   instantiateRecurringTodos: (dates: string[]) => void;
+
+  // Onboarding
+  seedOnboarding: (todayKey: string) => void;
 }
 
 export const useTodoStore = create<TodoState>()(
@@ -89,6 +93,7 @@ export const useTodoStore = create<TodoState>()(
       selectedTodo: null,
       activeSomedayListId: 'someday-default',
       language: 'pt' as Language,
+      hasSeeded: false,
 
       addTodo: (dateOrListId, text, isSomeday) => {
         const id = crypto.randomUUID();
@@ -459,6 +464,55 @@ export const useTodoStore = create<TodoState>()(
           return changed ? { todos: updatedTodos } : {};
         });
       },
+
+      seedOnboarding: (todayKey) => {
+        set((state) => {
+          if (state.hasSeeded) return { hasSeeded: true };
+
+          const mk = (text: string): TodoItem => ({
+            id: crypto.randomUUID(),
+            text,
+            done: false,
+            notes: '',
+            createdAt: Date.now(),
+          });
+
+          const tips = [
+            'Toque para marcar como concluída',
+            'Segure e arraste para mover para cima ou para baixo',
+            'Clique para editar uma tarefa',
+            '# Formate suas tarefas com markdown:',
+            'Crie subtítulos escrevendo # + texto',
+            'Edite **esta** tarefa para ver como usar *itálico*, [links](https://exemplo.com) e **negrito**',
+            'Adicione uma tarefa usando o campo abaixo',
+          ].map(mk);
+
+          const updates: Partial<TodoState> = { hasSeeded: true };
+
+          // Only seed today's tips if today is empty (never clobber real data)
+          const todayEmpty = !state.todos[todayKey] || state.todos[todayKey].length === 0;
+          if (todayEmpty) {
+            updates.todos = { ...state.todos, [todayKey]: tips };
+          }
+
+          // Only replace someday lists if user still has the untouched default list
+          const isPristineLists =
+            state.somedayLists.length === 1 &&
+            state.somedayLists[0].id === 'someday-default' &&
+            state.somedayLists[0].items.length === 0;
+          if (isPristineLists) {
+            updates.somedayLists = [
+              { id: 'someday-default', name: 'Someday', items: [] },
+              { id: crypto.randomUUID(), name: 'Lista de compras', items: [] },
+              { id: crypto.randomUUID(), name: 'Filmes para assistir', items: [] },
+              { id: crypto.randomUUID(), name: 'Livros para ler', items: [] },
+              { id: crypto.randomUUID(), name: 'Ideias', items: [] },
+            ];
+          }
+
+          return updates;
+        });
+      },
     }),
     {
       name: 'teuxdeux-clone-storage',
@@ -471,6 +525,7 @@ export const useTodoStore = create<TodoState>()(
         inFocusMode: state.inFocusMode,
         workspaceName: state.workspaceName,
         language: state.language,
+        hasSeeded: state.hasSeeded,
       }),
     }
   )

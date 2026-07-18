@@ -137,7 +137,10 @@ body {
 }
 
 .header-logo span {
-  color: #ff3b30; /* red dot after X */
+  color: var(--custom-color); /* purple superscript dot */
+  font-size: 0.6em;
+  vertical-align: super;
+  margin-left: 1px;
 }
 
 /* Weekly calendar grid columns */
@@ -202,14 +205,14 @@ body {
 
 .todo__title {
   font-family: 'Barlow Condensed', 'Roboto Condensed', system-ui, sans-serif;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--todo-past-text-color);
+  color: var(--todo-text-color); /* black in light mode, white in dark — all days */
 }
 
-/* Current Day Highlight */
+/* Current Day Highlight — only the current day is purple */
 .todo--current .todo__title {
   color: var(--custom-color);
 }
@@ -218,8 +221,9 @@ body {
   background: linear-gradient(to bottom, var(--custom-color-day-label) 0%, transparent 120px);
 }
 
-.todo--past .todo__title {
-  opacity: 0.65;
+/* Past days keep the same (black) title colour, just slightly muted body */
+.todo--past .todo-content__text {
+  opacity: 0.7;
 }
 
 /* Todo items list */
@@ -257,7 +261,7 @@ body {
 }
 
 .todo-content__text {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--todo-text-color);
   flex: 1;
@@ -265,6 +269,7 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.2;
+  cursor: text;
 }
 
 .todo-content__text.is-done {
@@ -273,7 +278,7 @@ body {
   opacity: 0.75;
 }
 
-/* Checkbox */
+/* Checkbox — discreet by default, reveals on row hover (TeuxDeux style) */
 .todo__checkbox {
   width: 15px;
   height: 15px;
@@ -282,6 +287,15 @@ body {
   flex-shrink: 0;
   border-radius: 3px;
   border: 1px solid var(--app-button-color);
+  opacity: 0.18;
+  transition: opacity 0.15s ease;
+}
+
+/* Reveal the checkbox when hovering the row, focusing it, or when checked */
+.todo__list-item:hover .todo__checkbox,
+.todo__checkbox:focus-visible,
+.todo__checkbox:checked {
+  opacity: 1;
 }
 
 /* Action Buttons on Hover — absolutely positioned so they don't compress text */
@@ -609,4 +623,303 @@ body {
   border-radius: 4px;
   z-index: 1000;
   pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* Custom in-app modals (replace native prompt/confirm/alert)        */
+/* ---------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: modalFade 0.15s ease;
+}
+
+@keyframes modalFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-card {
+  background: var(--app-background);
+  border: 2px solid var(--custom-color);
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 380px;
+  padding: 22px;
+  animation: modalPop 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from { transform: translateY(8px) scale(0.98); opacity: 0.6; }
+  to   { transform: translateY(0) scale(1);      opacity: 1; }
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--todo-text-color);
+  margin-bottom: 14px;
+}
+
+.modal-message {
+  font-size: 13.5px;
+  color: var(--todo-past-text-color);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.modal-input {
+  width: 100%;
+  background: var(--someday-list-background);
+  border: 1px solid var(--todo-border-color);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--todo-text-color);
+  outline: none;
+  transition: border-color 0.15s;
+  margin-bottom: 18px;
+}
+
+.modal-input:focus {
+  border-color: var(--custom-color);
+  box-shadow: 0 0 0 2px var(--custom-color-light);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-btn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.modal-btn--ghost {
+  background: transparent;
+  color: var(--todo-past-text-color);
+  border: 1px solid var(--todo-border-color);
+}
+.modal-btn--ghost:hover {
+  color: var(--todo-text-color);
+  background: var(--timer-bg);
+}
+
+.modal-btn--primary {
+  background: var(--custom-color);
+  color: #ffffff;
+}
+.modal-btn--primary:hover {
+  filter: brightness(1.08);
+}
+
+.modal-btn--danger {
+  background: #ef4444;
+  color: #ffffff;
+}
+.modal-btn--danger:hover {
+  filter: brightness(1.08);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--todo-past-text-color);
+  padding: 4px;
+  border-radius: 4px;
+}
+.modal-close:hover {
+  color: var(--todo-text-color);
+  background: var(--timer-bg);
+}
+
+.modal-help-list {
+  list-style: disc;
+  padding-left: 18px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.modal-help-list li {
+  font-size: 13px;
+  color: var(--todo-text-color);
+  line-height: 1.45;
+}
+
+/* ---------------------------------------------------------------- */
+/* Focus Mode — full-screen single-day card with Pomodoro timer      */
+/* ---------------------------------------------------------------- */
+.focus-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: rgba(10, 10, 14, 0.72);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: modalFade 0.2s ease;
+}
+
+.focus-exit {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.focus-exit:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.focus-wallpaper-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.focus-wallpaper-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.focus-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.focus-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.focus-timer__display {
+  font-family: 'Barlow Condensed', 'Roboto Condensed', system-ui, sans-serif;
+  font-size: 68px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-timer__presets {
+  display: flex;
+  gap: 6px;
+}
+
+.focus-preset {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.focus-preset:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.focus-preset.active {
+  background: var(--custom-color);
+  color: #ffffff;
+}
+
+.focus-timer__controls {
+  display: flex;
+  gap: 8px;
+}
+
+.focus-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.focus-ctrl:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+.focus-ctrl--primary {
+  background: var(--custom-color);
+}
+.focus-ctrl--primary:hover {
+  filter: brightness(1.1);
+  background: var(--custom-color);
+}
+
+.focus-day {
+  width: 320px;
+  max-width: 100%;
+  height: min(52vh, 460px);
+  background: var(--app-background);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  display: flex;
+}
+
+/* Inside focus, the day column fills the card and drops its right border */
+.focus-day .todo {
+  width: 100%;
+  min-width: 0;
+  border-right: none;
+}
+
+.focus-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }

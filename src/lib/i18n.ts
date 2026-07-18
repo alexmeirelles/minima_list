@@ -7,7 +7,9 @@ export const translations = {
     workspacePlaceholder: 'Clique para nomear seu espaço',
     addTodoPlaceholder: 'Adicionar tarefa...',
     days: ['DOMINGO', 'SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO'],
+    daysLong: ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'],
     months: ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'],
+    formatSmallDate: (day: number, month: string, year: number) => `${day} DE ${month}. DE ${year}`,
     somedayLists: 'LISTAS SOMEDAY',
     newList: 'NOVA LISTA',
     clickToRename: 'Clique para renomear',
@@ -71,12 +73,44 @@ export const translations = {
     patternWeekdays: 'Dias úteis (Seg-Sex)',
     patternWeekly: 'Semanal',
     everyLabel: (day: string) => `toda ${day}`,
+    // New list modal
+    newListTitle: 'Adicionar nome da lista',
+    newListPlaceholder: 'Nome da lista',
+    createBtn: 'Criar',
+    cancelBtn: 'Cancelar',
+    // Reset confirmation modal
+    resetTitle: 'Resetar dados',
+    resetConfirm: 'Sim, apagar tudo',
+    // Delete list modal
+    deleteListTitle: 'Excluir lista',
+    deleteConfirm: 'Excluir',
+    // Focus mode
+    focusStart: 'Iniciar',
+    focusPause: 'Pausar',
+    focusReset: 'Reiniciar',
+    focusExit: 'Sair',
+    focusWallpaper: 'Trocar fundo',
+    focusExitHint: 'Pressione ESC para sair',
+    // Help
+    help: 'Ajuda',
+    helpTitle: 'Como usar',
+    helpItems: [
+      'Digite no campo inferior de cada dia e pressione Enter para adicionar uma tarefa (o foco permanece para adicionar várias).',
+      'Clique no texto de uma tarefa para editá-la; clique no quadradinho para concluir.',
+      'Arraste tarefas para reordenar dentro do dia ou movê-las entre dias e listas.',
+      'Formate com markdown: # vira subtítulo, **negrito**, *itálico* e [link](url).',
+      'Use o botão Foco para um dia isolado com timer Pomodoro.',
+      'A lupa no topo busca tarefas em todos os dias e listas.',
+    ],
+    closeBtn: 'Fechar',
   },
   en: {
     workspacePlaceholder: 'Click to name your workspace',
     addTodoPlaceholder: 'Type in your todo',
     days: ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'],
+    daysLong: ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'],
     months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
+    formatSmallDate: (day: number, month: string, year: number) => `${month} ${day}, ${year}`,
     somedayLists: 'SOMEDAY LISTS',
     newList: 'NEW LIST',
     clickToRename: 'Click to rename',
@@ -140,6 +174,36 @@ export const translations = {
     patternWeekdays: 'Weekdays (Mon-Fri)',
     patternWeekly: 'Weekly',
     everyLabel: (day: string) => `every ${day}`,
+    // New list modal
+    newListTitle: 'Add list name',
+    newListPlaceholder: 'List name',
+    createBtn: 'Create',
+    cancelBtn: 'Cancel',
+    // Reset confirmation modal
+    resetTitle: 'Reset data',
+    resetConfirm: 'Yes, delete everything',
+    // Delete list modal
+    deleteListTitle: 'Delete list',
+    deleteConfirm: 'Delete',
+    // Focus mode
+    focusStart: 'Start',
+    focusPause: 'Pause',
+    focusReset: 'Reset',
+    focusExit: 'Exit',
+    focusWallpaper: 'Change wallpaper',
+    focusExitHint: 'Press ESC to exit',
+    // Help
+    help: 'Help',
+    helpTitle: 'How to use',
+    helpItems: [
+      'Type in the bottom field of any day and press Enter to add a task (focus stays so you can add several).',
+      'Click a task text to edit it; click the small box to complete it.',
+      'Drag tasks to reorder within a day or move them between days and lists.',
+      'Format with markdown: # becomes a subheader, **bold**, *italic* and [link](url).',
+      'Use the Focus button for a single day with a Pomodoro timer.',
+      'The magnifier at the top searches tasks across all days and lists.',
+    ],
+    closeBtn: 'Close',
   },
 } as const;
 

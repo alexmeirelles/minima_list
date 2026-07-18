@@ -45,3 +45,16 @@ export function parseTodoText(text: string): ParsedTodo {
     html: escaped,
   };
 }
+
+// Strip all markdown tokens, returning plain readable text (used in search results)
+export function stripMarkdown(text: string): string {
+  let t = text.trim();
+  if (t.startsWith('#')) t = t.replace(/^#\s*/, '');
+  t = t
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
+    .replace(/\[(.*?)\]\((https?:\/\/[^)]*?)\)/g, '$1');
+  return t;
+}

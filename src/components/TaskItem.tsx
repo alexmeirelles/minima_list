@@ -77,6 +77,15 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
     setIsEditing(true);
   };
 
+  // Single click on the task text starts inline editing (TeuxDeux behaviour),
+  // but real links inside the rendered markdown still open normally.
+  const handleTextClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('a')) return;
+    e.stopPropagation();
+    setIsEditing(true);
+  };
+
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleTodo(dateOrListId, task.id, isSomeday);
@@ -231,6 +240,7 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
                 task.done ? 'is-done' : ''
               }`}
               title={task.text}
+              onClick={handleTextClick}
               dangerouslySetInnerHTML={{ __html: parsed.html }}
             />
 

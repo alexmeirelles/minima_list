@@ -73,6 +73,16 @@ export default function NoteSidebar() {
     };
   }, []);
 
+  // Close the details panel on Esc
+  useEffect(() => {
+    if (!selectedTodo) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedTodo(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [selectedTodo, setSelectedTodo]);
+
   if (!selectedTodo || !todoItem) return null;
 
   // Check if this todo has an associated recurring template
@@ -94,13 +104,11 @@ export default function NoteSidebar() {
     }
 
     addRecurringTemplate(todoItem.text, pattern, dayOfWeek);
-    alert(t.recurringCreated(todoItem.text, pattern));
   };
 
   const handleRemoveRecurring = () => {
     if (activeTemplate) {
       deleteRecurringTemplate(activeTemplate.id);
-      alert(t.recurringRemoved);
     }
   };
 
