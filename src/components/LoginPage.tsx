@@ -308,14 +308,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onContinueAsGuest }) => {
               </span>
             </div>
 
-            {/* Google OAuth Button */}
+            {/* Google OAuth Button (Desativado / Em breve) */}
             <button
               type="button"
-              onClick={handleGoogle}
-              disabled={loading}
-              className="w-full py-2.5 px-4 rounded-lg border border-[var(--todo-border-color)] hover:bg-[var(--timer-bg)] text-xs font-semibold text-[var(--todo-text-color)] flex items-center justify-center gap-3 transition-colors disabled:opacity-50"
+              disabled
+              className="w-full py-2.5 px-4 rounded-lg border border-[var(--todo-border-color)] text-xs font-semibold text-[var(--todo-text-color)] flex items-center justify-center gap-2.5 opacity-40 cursor-not-allowed select-none bg-[var(--someday-list-background)]/50"
+              title="Login com Google estará disponível em breve"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 grayscale opacity-75" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -334,6 +334,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onContinueAsGuest }) => {
                 />
               </svg>
               <span>Continuar com Google</span>
+              <span className="text-[10px] font-normal uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--timer-bg)] text-[var(--todo-past-text-color)]">
+                Em breve
+              </span>
             </button>
 
             {/* Offline fallback trigger */}
