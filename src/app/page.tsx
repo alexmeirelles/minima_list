@@ -88,10 +88,13 @@ export default function Home() {
   // Date input ref for picker
   const dateInputRef = useRef<HTMLInputElement>(null);
 
-  // Dynamically update CSS custom properties for accent color
+  // Dynamically update CSS custom properties for accent color and grid columns
   useEffect(() => {
-    if (!accentColor) return;
     const root = document.documentElement;
+    const cols = inFocusMode ? 1 : gridColumnSize;
+    root.style.setProperty('--grid-columns', String(cols));
+
+    if (!accentColor) return;
     root.style.setProperty('--custom-color', accentColor);
     root.style.setProperty('--custom-color-highlight', accentColor);
     root.style.setProperty('--focus-outline-color', accentColor);
@@ -112,7 +115,7 @@ export default function Home() {
         darkMode ? `rgba(${r}, ${g}, ${b}, 0.15)` : `rgba(${r}, ${g}, ${b}, 0.08)`
       );
     }
-  }, [accentColor, darkMode]);
+  }, [accentColor, darkMode, gridColumnSize, inFocusMode]);
 
   // Initialize/persist dark mode class on body
   useEffect(() => {

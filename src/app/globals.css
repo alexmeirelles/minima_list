@@ -161,10 +161,11 @@ body {
   min-width: 100%;
 }
 
-.calendar-grid .todo {
-  flex: 1 1 0%;
+.calendar-grid .todo,
+.someday-lists-grid .todo {
+  flex: 0 0 calc(100% / var(--grid-columns, 5));
+  width: calc(100% / var(--grid-columns, 5));
   min-width: 180px;
-  width: 0;
   max-width: 100%;
 }
 
@@ -994,7 +995,8 @@ body {
   }
 
   .todo,
-  .calendar-grid .todo {
+  .calendar-grid .todo,
+  .someday-lists-grid .todo {
     flex: none;
     width: 100vw;
     min-width: 100vw;
