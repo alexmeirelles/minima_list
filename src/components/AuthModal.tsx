@@ -48,7 +48,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSyncNow
       setErrorMsg(null);
       await signInWithGoogle();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao conectar com Google.');
+      if (
+        err.message?.includes('provider is not enabled') ||
+        err.msg?.includes('provider is not enabled') ||
+        JSON.stringify(err).includes('provider is not enabled')
+      ) {
+        setErrorMsg(
+          'O login com Google precisa ser ativado no Supabase (Authentication → Providers → Google com as chaves do Google Cloud). Por enquanto, use E-mail e Senha!'
+        );
+      } else {
+        setErrorMsg(err.message || 'Erro ao conectar com Google.');
+      }
       setLoading(false);
     }
   };
