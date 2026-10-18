@@ -603,7 +603,7 @@ export default function Home() {
                   ))}
 
                   {/* Create List Call-to-action Column */}
-                  <div className="todo todo--secondary flex flex-col justify-center items-center opacity-60 hover:opacity-100 transition-all p-6 min-w-[204px] border-r border-[var(--footer-border-color)]">
+                  <div className="todo todo--secondary flex flex-col justify-center items-center opacity-60 hover:opacity-100 transition-all p-6 min-w-[204px]">
                     <button
                       onClick={handleCreateList}
                       className="flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] hover:text-[var(--custom-color)] transition-colors"

@@ -16,7 +16,7 @@
   --focus-outline-color: #852CE6;
 
   /* Todo items */
-  --todo-border-color: #edeef0;
+  --todo-border-color: rgba(0, 0, 0, 0.07);
   --todo-header-background: #edeef0;
   --todo-header-text-color: #141414;
   --todo-past-text-color: #a6a6a7;
@@ -52,7 +52,7 @@ body.dark-mode {
   --banner-text-color: #ffffff;
   --focus-outline-color: #9b4ff7;
 
-  --todo-border-color: #232328;
+  --todo-border-color: rgba(255, 255, 255, 0.08);
   --todo-header-background: #1e1e24;
   --todo-header-text-color: #e2e2e8;
   --todo-past-text-color: #63636e;
@@ -206,17 +206,23 @@ body {
   flex-direction: column;
   width: 204px;
   min-width: 204px;
-  border-right: 1px solid var(--todo-border-color);
+  border-right: none;
   flex-shrink: 0;
   background: var(--app-background);
   height: 100%;
   transition: border-color 0.2s;
 }
 
-/* Header of each column */
+/* Header of each column: fixed 84px height so lines in all columns start at the exact same Y position */
 .todo__header {
-  padding: 16px 20px 8px 20px;
+  height: 84px;
+  padding: 0 20px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .todo__date {
@@ -420,8 +426,7 @@ body {
 
 /* Todo Creation Row */
 .todo-content--create {
-  border-top: 1px solid var(--todo-border-color);
-  opacity: 0.75;
+  opacity: 0.85;
   transition: opacity 0.2s;
   gap: 6px;
 }
@@ -567,7 +572,7 @@ body {
 }
 
 .todo--secondary {
-  border-right: 1px solid var(--footer-border-color);
+  border-right: none;
   background: var(--someday-list-background);
 }
 

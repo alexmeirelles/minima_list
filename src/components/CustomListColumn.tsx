@@ -152,85 +152,87 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
         setIsDragOverCol(false);
       }}
     >
-      {/* Someday Column Drag Handle (exact TeuxDeux drag handle icon) */}
-      <div className="someday-actions flex justify-center pt-2 pb-0 cursor-grab active:cursor-grabbing select-none">
-        <section
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData('text/minima-someday-list', listId);
-            e.dataTransfer.effectAllowed = 'move';
-          }}
-          className="someday-actions__handle p-1 text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors opacity-40 hover:opacity-100"
-          title="Arraste para reordenar coluna"
-        >
-          <DragHandleIcon size={14} />
-        </section>
-      </div>
-
-      <header className="todo__header flex items-center justify-between relative group/header select-none">
-        <div className="flex-1 min-w-0 pr-2">
-          {isEditingTitle ? (
-            <input
-              ref={titleInputRef}
-              type="text"
-              value={titleText}
-              onChange={(e) => setTitleText(e.target.value)}
-              onBlur={handleRenameSave}
-              onKeyDown={handleTitleKeyDown}
-              className="todo__title w-full bg-transparent border-b border-[var(--custom-color)] outline-none text-left"
-            />
-          ) : (
-            <h2
-              className="todo__title truncate cursor-pointer text-left hover:text-[var(--custom-color)] transition-colors"
-              onClick={() => setIsEditingTitle(true)}
-              title={t.clickToRename}
-            >
-              {name}
-            </h2>
-          )}
+      <header className="todo__header relative group/header select-none flex flex-col justify-end">
+        {/* Subtle drag handle positioned at top of header */}
+        <div className="someday-actions absolute top-2 left-0 right-0 flex justify-center cursor-grab active:cursor-grabbing">
+          <section
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData('text/minima-someday-list', listId);
+              e.dataTransfer.effectAllowed = 'move';
+            }}
+            className="someday-actions__handle p-1 text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors opacity-40 hover:opacity-100"
+            title="Arraste para reordenar coluna"
+          >
+            <DragHandleIcon size={14} />
+          </section>
         </div>
 
-        {/* Options dots menu button */}
-        <div ref={menuRef} className="relative flex-shrink-0">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] opacity-0 group-hover/header:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--timer-bg)]"
-            type="button"
-          >
-            <VerticalDotsIcon size={14} />
-          </button>
-          
-          {showMenu && (
-            <div className="absolute right-0 top-full mt-1 w-32 bg-[var(--app-background)] border border-[var(--todo-border-color)] shadow-lg rounded-md py-1 z-50 text-left">
-              <button
-                onClick={() => {
-                  setIsEditingTitle(true);
-                  setShowMenu(false);
-                }}
-                className="w-full text-left px-3 py-1.5 text-xs text-[var(--todo-text-color)] hover:bg-[var(--timer-bg)]"
-                type="button"
+        <div className="flex items-center justify-between w-full">
+          <div className="flex-1 min-w-0 pr-2">
+            {isEditingTitle ? (
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={titleText}
+                onChange={(e) => setTitleText(e.target.value)}
+                onBlur={handleRenameSave}
+                onKeyDown={handleTitleKeyDown}
+                className="todo__title w-full bg-transparent border-b border-[var(--custom-color)] outline-none text-left"
+              />
+            ) : (
+              <h2
+                className="todo__title truncate cursor-pointer text-left hover:text-[var(--custom-color)] transition-colors"
+                onClick={() => setIsEditingTitle(true)}
+                title={t.clickToRename}
               >
-                {t.renameList}
-              </button>
-              <button
-                onClick={() => {
-                  handleDeleteListClick();
-                  setShowMenu(false);
-                }}
-                className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-[var(--timer-bg)] font-medium"
-                type="button"
-              >
-                {t.deleteList}
-              </button>
-            </div>
-          )}
+                {name}
+              </h2>
+            )}
+          </div>
+
+          {/* Options dots menu button */}
+          <div ref={menuRef} className="relative flex-shrink-0">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] opacity-0 group-hover/header:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--timer-bg)]"
+              type="button"
+            >
+              <VerticalDotsIcon size={14} />
+            </button>
+            
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 w-32 bg-[var(--app-background)] border border-[var(--todo-border-color)] shadow-lg rounded-md py-1 z-50 text-left">
+                <button
+                  onClick={() => {
+                    setIsEditingTitle(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-xs text-[var(--todo-text-color)] hover:bg-[var(--timer-bg)]"
+                  type="button"
+                >
+                  {t.renameList}
+                </button>
+                <button
+                  onClick={() => {
+                    handleDeleteListClick();
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-[var(--timer-bg)] font-medium"
+                  type="button"
+                >
+                  {t.deleteList}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Droppable sortable list items area */}
       <div ref={setNodeRef} className="todo__list flex-1 flex flex-col justify-start">
         <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-          <ul className="flex flex-col gap-0">
+          <ul className="flex flex-col gap-0 m-0 p-0 list-none">
             {items.map((item) => (
               <TaskItem
                 key={item.id}
@@ -239,24 +241,26 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
                 isSomeday={true}
               />
             ))}
+
+            {/* In-line Create Task Row - seamlessly part of the 34px ruled grid */}
+            <li className="todo__list-item">
+              <form onSubmit={handleAdd} className="w-full h-full flex items-center">
+                <div className="todo-content todo-content--create">
+                  <span className="todo-content--create__plus">+</span>
+                  <input
+                    ref={newTodoInputRef}
+                    type="text"
+                    value={newText}
+                    onChange={(e) => setNewText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={t.addTodoPlaceholder}
+                    className="todo__input w-full bg-transparent border-none outline-none text-xs sm:text-sm placeholder-[var(--todo-past-text-color)]/70"
+                  />
+                </div>
+              </form>
+            </li>
           </ul>
         </SortableContext>
-
-        {/* Create Todo Item Row right under tasks */}
-        <form onSubmit={handleAdd} className="px-5">
-          <div className="todo-content todo-content--create h-[34px]">
-            <span className="todo-content--create__plus">+</span>
-            <input
-              ref={newTodoInputRef}
-              type="text"
-              value={newText}
-              onChange={(e) => setNewText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t.addTodoPlaceholder}
-              className="todo__input"
-            />
-          </div>
-        </form>
       </div>
 
       {/* Floating Context Menu on Right Click */}

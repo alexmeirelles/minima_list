@@ -113,7 +113,7 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
       {/* Sortable Task List Area */}
       <div ref={setNodeRef} className="todo__list flex-1 flex flex-col justify-start">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-          <ul className="flex flex-col gap-0">
+          <ul className="flex flex-col gap-0 m-0 p-0 list-none">
             {tasks.map((task) => (
               <TaskItem
                 key={task.id}
@@ -122,24 +122,26 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
                 isSomeday={false}
               />
             ))}
+
+            {/* In-line Create Task Row - seamlessly part of the 34px ruled grid */}
+            <li className="todo__list-item">
+              <form onSubmit={handleAdd} className="w-full h-full flex items-center">
+                <div className="todo-content todo-content--create">
+                  <span className="todo-content--create__plus">+</span>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={newText}
+                    onChange={(e) => setNewText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={t.addTodoPlaceholder}
+                    className="todo__input w-full bg-transparent border-none outline-none text-xs sm:text-sm placeholder-[var(--todo-past-text-color)]/70"
+                  />
+                </div>
+              </form>
+            </li>
           </ul>
         </SortableContext>
-
-        {/* Create Todo Item Row right after tasks */}
-        <form onSubmit={handleAdd} className="px-5">
-          <div className="todo-content todo-content--create h-[34px]">
-            <span className="todo-content--create__plus">+</span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={newText}
-              onChange={(e) => setNewText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t.addTodoPlaceholder}
-              className="todo__input"
-            />
-          </div>
-        </form>
       </div>
 
       {/* Floating Context Menu on Right Click */}
