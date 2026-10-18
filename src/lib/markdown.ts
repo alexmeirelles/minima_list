@@ -32,11 +32,14 @@ export function parseTodoText(text: string): ParsedTodo {
   escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
   escaped = escaped.replace(/_(.*?)_/g, '<em>$1</em>');
 
+  // Apply strikethrough formatting: ~~strikethrough~~
+  escaped = escaped.replace(/~~(.*?)~~/g, '<del class="todo-del opacity-75 line-through">$1</del>');
+
   // Apply link formatting: [text](url)
   // Matching [text](url) where url can be anything except parenthesis
   escaped = escaped.replace(
     /\[(.*?)\]\((https?:\/\/.*?)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer" class="todo-link underline hover:text-purple-600 transition-colors" onclick="event.stopPropagation();">$1</a>'
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="todo-link underline hover:text-[var(--custom-color)] transition-colors" onclick="event.stopPropagation();">$1</a>'
   );
 
   return {
@@ -55,6 +58,7 @@ export function stripMarkdown(text: string): string {
     .replace(/__(.*?)__/g, '$1')
     .replace(/\*(.*?)\*/g, '$1')
     .replace(/_(.*?)_/g, '$1')
+    .replace(/~~(.*?)~~/g, '$1')
     .replace(/\[(.*?)\]\((https?:\/\/[^)]*?)\)/g, '$1');
   return t;
 }

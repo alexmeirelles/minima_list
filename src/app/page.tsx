@@ -22,6 +22,7 @@ import CustomListColumn from '@/components/CustomListColumn';
 import NoteSidebar from '@/components/NoteSidebar';
 import RecurringModal from '@/components/RecurringModal';
 import FocusMode from '@/components/FocusMode';
+import SettingsModal from '@/components/SettingsModal';
 import { InputModal, ConfirmModal, InfoModal } from '@/components/Modal';
 import {
   SearchIcon,
@@ -58,6 +59,10 @@ export default function Home() {
     seedOnboarding,
     language,
     setLanguage,
+    accentColor,
+    setAccentColor,
+    rolloverEnabled,
+    rolloverPastTodos,
   } = useTodoStore();
 
   const t = useTranslations();
@@ -72,6 +77,8 @@ export default function Home() {
   const [showNewListModal, setShowNewListModal] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [rolloverNotice, setRolloverNotice] = useState<string | null>(null);
 
   // Search state
   const [showSearch, setShowSearch] = useState(false);
@@ -80,6 +87,32 @@ export default function Home() {
 
   // Date input ref for picker
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Dynamically update CSS custom properties for accent color
+  useEffect(() => {
+    if (!accentColor) return;
+    const root = document.documentElement;
+    root.style.setProperty('--custom-color', accentColor);
+    root.style.setProperty('--custom-color-highlight', accentColor);
+    root.style.setProperty('--focus-outline-color', accentColor);
+    root.style.setProperty('--app-button-hover-color', accentColor);
+    root.style.setProperty('--app-button-move-color', accentColor);
+
+    // Parse hex to RGBA
+    let c = accentColor.replace('#', '');
+    if (c.length === 3) c = c.split('').map((x) => x + x).join('');
+    const num = parseInt(c, 16);
+    if (!isNaN(num)) {
+      const r = (num >> 16) & 255;
+      const g = (num >> 8) & 255;
+      const b = num & 255;
+      root.style.setProperty('--custom-color-light', `rgba(${r}, ${g}, ${b}, 0.25)`);
+      root.style.setProperty(
+        '--custom-color-day-label',
+        darkMode ? `rgba(${r}, ${g}, ${b}, 0.15)` : `rgba(${r}, ${g}, ${b}, 0.08)`
+      );
+    }
+  }, [accentColor, darkMode]);
 
   // Initialize/persist dark mode class on body
   useEffect(() => {
@@ -97,10 +130,17 @@ export default function Home() {
     }
   }, [showSearch]);
 
-  // First-load onboarding: seed today's tip tasks + example Someday lists
+  // First-load onboarding: seed today's tip tasks + execute Flying Rollover
   useEffect(() => {
-    seedOnboarding(formatDateKey(new Date()));
-  }, [seedOnboarding]);
+    const todayKey = formatDateKey(new Date());
+    seedOnboarding(todayKey);
+    const count = rolloverPastTodos(todayKey);
+    if (count > 0) {
+      setRolloverNotice(t.tasksRolledOver(count));
+      const timer = setTimeout(() => setRolloverNotice(null), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [seedOnboarding, rolloverPastTodos, t]);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -631,7 +671,11 @@ export default function Home() {
               >
                 {t.goPro}
               </button>
-              <button title={t.settings} type="button">
+              <button
+                title={t.settings}
+                type="button"
+                onClick={() => setShowSettings(true)}
+              >
                 <UserIcon size={16} />
               </button>
               <button onClick={() => setShowHelp(true)} title={t.help} type="button">
@@ -702,6 +746,28 @@ export default function Home() {
           closeLabel={t.closeBtn}
           onClose={() => setShowHelp(false)}
         />
+      )}
+
+      {/* Settings modal */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onResetConfirm={handleResetData}
+      />
+
+      {/* Flying Rollover toast notice */}
+      {rolloverNotice && (
+        <div className="fixed bottom-12 left-6 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-[var(--custom-color)] text-white shadow-2xl text-xs font-semibold animate-bounce-subtle">
+          <span>✈️</span>
+          <span>{rolloverNotice}</span>
+          <button
+            type="button"
+            onClick={() => setRolloverNotice(null)}
+            className="ml-2 hover:opacity-75 transition-opacity"
+          >
+            <XIcon size={14} />
+          </button>
+        </div>
       )}
     </div>
   );

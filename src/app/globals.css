@@ -923,3 +923,36 @@ body {
   letter-spacing: 1px;
   text-transform: uppercase;
 }
+
+/* Floating Formatting Toolbar (TeuxDeux style) */
+.floating-formatting-bar {
+  background: var(--app-background);
+  border: 1px solid var(--todo-border-color);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounceSubtle 1.8s infinite ease-in-out;
+}

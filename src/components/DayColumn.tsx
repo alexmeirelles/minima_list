@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
@@ -38,12 +38,17 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
   const dateString = t.formatSmallDate(dayNum, month, year);
   const dayName = t.daysLong[date.getDay()];
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = newText.trim();
     if (trimmed) {
       addTodo(dateKey, trimmed, false);
       setNewText('');
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     }
   };
 
@@ -88,6 +93,7 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
           <div className="todo-content todo-content--create">
             <span className="todo-content--create__plus">+</span>
             <input
+              ref={inputRef}
               type="text"
               value={newText}
               onChange={(e) => setNewText(e.target.value)}

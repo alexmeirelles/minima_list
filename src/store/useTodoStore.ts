@@ -36,6 +36,8 @@ interface TodoState {
   workspaceName: string;
   selectedTodo: { id: string; dateOrListId: string; isSomeday: boolean } | null;
   activeSomedayListId: string | null;
+  accentColor: string;
+  rolloverEnabled: boolean;
   language: Language;
   hasSeeded: boolean;
 
@@ -68,6 +70,9 @@ interface TodoState {
   setWorkspaceName: (name: string) => void;
   setSelectedTodo: (todo: { id: string; dateOrListId: string; isSomeday: boolean } | null) => void;
   setLanguage: (lang: Language) => void;
+  setAccentColor: (color: string) => void;
+  setRolloverEnabled: (enabled: boolean) => void;
+  rolloverPastTodos: (todayKey: string) => number;
 
   // Recurring Actions
   addRecurringTemplate: (text: string, pattern: RecurringTemplate['pattern'], dayOfWeek?: number) => void;
@@ -92,6 +97,8 @@ export const useTodoStore = create<TodoState>()(
       workspaceName: '',
       selectedTodo: null,
       activeSomedayListId: 'someday-default',
+      accentColor: '#852CE6',
+      rolloverEnabled: true,
       language: 'pt' as Language,
       hasSeeded: false,
 
@@ -400,6 +407,50 @@ export const useTodoStore = create<TodoState>()(
         set({ language: lang });
       },
 
+      setAccentColor: (color) => {
+        set({ accentColor: color });
+      },
+
+      setRolloverEnabled: (enabled) => {
+        set({ rolloverEnabled: enabled });
+      },
+
+      rolloverPastTodos: (todayKey) => {
+        let count = 0;
+        set((state) => {
+          if (!state.rolloverEnabled) return {};
+
+          const todayTodos = [...(state.todos[todayKey] || [])];
+          const updatedTodos = { ...state.todos };
+          let changed = false;
+
+          Object.entries(state.todos).forEach(([dateKey, list]) => {
+            if (dateKey < todayKey && Array.isArray(list) && list.length > 0) {
+              const unfinished = list.filter((item) => !item.done);
+              const finished = list.filter((item) => item.done);
+
+              if (unfinished.length > 0) {
+                count += unfinished.length;
+                changed = true;
+                updatedTodos[dateKey] = finished;
+                unfinished.forEach((item) => {
+                  if (!todayTodos.some((t) => t.id === item.id)) {
+                    todayTodos.push(item);
+                  }
+                });
+              }
+            }
+          });
+
+          if (changed) {
+            updatedTodos[todayKey] = todayTodos;
+            return { todos: updatedTodos };
+          }
+          return {};
+        });
+        return count;
+      },
+
       addRecurringTemplate: (text, pattern, dayOfWeek) => {
         const id = crypto.randomUUID();
         set((state) => ({
@@ -524,6 +575,8 @@ export const useTodoStore = create<TodoState>()(
         gridColumnSize: state.gridColumnSize,
         inFocusMode: state.inFocusMode,
         workspaceName: state.workspaceName,
+        accentColor: state.accentColor,
+        rolloverEnabled: state.rolloverEnabled,
         language: state.language,
         hasSeeded: state.hasSeeded,
       }),

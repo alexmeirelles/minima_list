@@ -143,6 +143,39 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
     setSwipeOffset(0);
   };
 
+  const applyFormatting = (prefix: string, suffix = prefix, isLineStart = false) => {
+    const el = inputRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    const val = editText;
+
+    if (isLineStart) {
+      let nextVal = val;
+      if (val.startsWith('# ')) {
+        nextVal = val.slice(2);
+      } else {
+        nextVal = '# ' + val.replace(/^#+\s*/, '');
+      }
+      setEditText(nextVal);
+      setTimeout(() => {
+        el.focus();
+      }, 0);
+      return;
+    }
+
+    const selected = val.substring(start, end);
+    const placeholder = selected || (prefix === '[' ? 'link' : 'texto');
+    const mid = prefix === '[' ? `[${placeholder}](https://)` : `${prefix}${placeholder}${suffix}`;
+    const nextVal = val.substring(0, start) + mid + val.substring(end);
+    setEditText(nextVal);
+    setTimeout(() => {
+      el.focus();
+      const cursor = start + mid.length;
+      el.setSelectionRange(cursor, cursor);
+    }, 0);
+  };
+
   const isSelected = selectedTodo?.id === task.id;
 
   if (parsed.isHeading) {
@@ -155,17 +188,66 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
         {...attributes}
         {...listeners}
       >
-        <div className="todo-content">
+        <div className="todo-content relative w-full">
           {isEditing ? (
-            <input
-              ref={inputRef}
-              type="text"
-              className="todo__input font-bold"
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              onBlur={handleSave}
-              onKeyDown={handleKeyDown}
-            />
+            <div className="relative w-full">
+              {/* Floating formatting bar */}
+              <div
+                className="floating-formatting-bar flex items-center gap-1 p-1 bg-[var(--app-background)] border border-[var(--todo-border-color)] rounded shadow-lg absolute -top-8 left-0 z-30 select-none"
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                <button
+                  type="button"
+                  className="px-1.5 py-0.5 text-xs font-bold rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                  title={t.formatBold}
+                  onClick={() => applyFormatting('**')}
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  className="px-1.5 py-0.5 text-xs italic font-serif rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                  title={t.formatItalic}
+                  onClick={() => applyFormatting('*')}
+                >
+                  I
+                </button>
+                <button
+                  type="button"
+                  className="px-1.5 py-0.5 text-xs font-bold rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                  title={t.formatHeading}
+                  onClick={() => applyFormatting('# ', '', true)}
+                >
+                  H
+                </button>
+                <button
+                  type="button"
+                  className="px-1.5 py-0.5 text-xs line-through rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                  title={t.formatStrikethrough}
+                  onClick={() => applyFormatting('~~')}
+                >
+                  S
+                </button>
+                <button
+                  type="button"
+                  className="px-1.5 py-0.5 text-xs rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                  title={t.formatLink}
+                  onClick={() => applyFormatting('[', '](https://)')}
+                >
+                  🔗
+                </button>
+              </div>
+
+              <input
+                ref={inputRef}
+                type="text"
+                className="todo__input font-bold"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                onBlur={handleSave}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
           ) : (
             <>
               <h5 className="select-none flex-1 font-bold text-[10px] tracking-wider uppercase text-[var(--todo-header-text-color)] py-1">
@@ -208,15 +290,64 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
     >
       <div className="todo-content flex items-center w-full">
         {isEditing ? (
-          <input
-            ref={inputRef}
-            type="text"
-            className="todo__input"
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            onBlur={handleSave}
-            onKeyDown={handleKeyDown}
-          />
+          <div className="relative w-full">
+            {/* Floating formatting bar */}
+            <div
+              className="floating-formatting-bar flex items-center gap-1 p-1 bg-[var(--app-background)] border border-[var(--todo-border-color)] rounded shadow-lg absolute -top-8 left-0 z-30 select-none"
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              <button
+                type="button"
+                className="px-1.5 py-0.5 text-xs font-bold rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                title={t.formatBold}
+                onClick={() => applyFormatting('**')}
+              >
+                B
+              </button>
+              <button
+                type="button"
+                className="px-1.5 py-0.5 text-xs italic font-serif rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                title={t.formatItalic}
+                onClick={() => applyFormatting('*')}
+              >
+                I
+              </button>
+              <button
+                type="button"
+                className="px-1.5 py-0.5 text-xs font-bold rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                title={t.formatHeading}
+                onClick={() => applyFormatting('# ', '', true)}
+              >
+                H
+              </button>
+              <button
+                type="button"
+                className="px-1.5 py-0.5 text-xs line-through rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                title={t.formatStrikethrough}
+                onClick={() => applyFormatting('~~')}
+              >
+                S
+              </button>
+              <button
+                type="button"
+                className="px-1.5 py-0.5 text-xs rounded hover:bg-[var(--timer-bg)] text-[var(--todo-text-color)]"
+                title={t.formatLink}
+                onClick={() => applyFormatting('[', '](https://)')}
+              >
+                🔗
+              </button>
+            </div>
+
+            <input
+              ref={inputRef}
+              type="text"
+              className="todo__input"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
         ) : (
           <>
             <div className="todo__checkbox-wrapper mr-2 flex items-center justify-center">
