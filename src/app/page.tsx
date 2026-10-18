@@ -67,6 +67,10 @@ export default function Home() {
     setRolloverEnabled,
     rolloverPastTodos,
     showLines,
+    textSize,
+    spacing,
+    showCompleted,
+    bulletStyle,
     isPreferencesOpen,
     setIsPreferencesOpen,
   } = useTodoStore();
@@ -362,7 +366,11 @@ export default function Home() {
   }, [searchQuery, todos, somedayLists]);
 
   return (
-    <div className={`app-root ${!showLines ? 'hide-lines' : ''}`}>
+    <div
+      className={`app-root ${!showLines ? 'hide-lines' : ''} text-size-${(textSize || 'M').toLowerCase()} spacing-${(spacing || 'M').toLowerCase()} ${
+        !showCompleted ? 'hide-completed' : ''
+      } bullet-${bulletStyle || 'none'}`}
+    >
       {/* Search overlay/dropdown */}
       {showSearch && (
         <div className="bg-[var(--someday-list-background)] border-b border-[var(--todo-border-color)] px-6 py-4 flex flex-col gap-3 relative z-50 shadow-md">

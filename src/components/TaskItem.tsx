@@ -278,9 +278,9 @@ export default function TaskItem({ task, dateOrListId, isSomeday }: TaskItemProp
         transform: transform ? CSS.Transform.toString(transform) : undefined,
         left: swipeOffset,
       }}
-      className={`todo__list-item group relative select-none flex items-center transition-all duration-150 ${
-        isSelected ? 'bg-[var(--custom-color-light)]' : ''
-      }`}
+      className={`todo__list-item group relative select-none flex items-center transition-colors duration-150 ${
+        task.done ? 'is-completed' : ''
+      } ${isSelected ? 'bg-[var(--custom-color-light)]' : ''}`}
       onDoubleClick={handleDoubleClick}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

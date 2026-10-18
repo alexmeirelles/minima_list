@@ -634,6 +634,11 @@ export const useTodoStore = create<TodoState>()(
         rolloverEnabled: state.rolloverEnabled,
         language: state.language,
         hasSeeded: state.hasSeeded,
+        showLines: state.showLines,
+        textSize: state.textSize,
+        spacing: state.spacing,
+        showCompleted: state.showCompleted,
+        bulletStyle: state.bulletStyle,
       }),
     }
   )

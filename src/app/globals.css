@@ -26,7 +26,8 @@
   --todo-checkbox-done-color: #999999;
   --todo-button-hover-color: #000000;
   --todo-button-opacity: 0.1;
-  --todo-item-height: 1.8888889rem; /* ~34px */
+  --todo-item-height: 34px;
+  --todo-font-size: 14px;
   --todo-outer-margin: 1.1111111rem; /* ~20px */
 
   /* Someday / listas */
@@ -266,18 +267,105 @@ body {
   background: transparent;
 }
 
+/* Preferences: Text Size */
+.app-root.text-size-s {
+  --todo-font-size: 12px;
+}
+.app-root.text-size-m {
+  --todo-font-size: 14px;
+}
+.app-root.text-size-l {
+  --todo-font-size: 16px;
+}
+
+/* Preferences: Spacing (Row Height & Ruled Line Pitch) */
+.app-root.spacing-s {
+  --todo-item-height: 28px;
+}
+.app-root.spacing-m {
+  --todo-item-height: 34px;
+}
+.app-root.spacing-l {
+  --todo-item-height: 42px;
+}
+
+/* Preferences: Hide Completed */
+.app-root.hide-completed .todo__list-item.is-completed {
+  display: none !important;
+}
+
+/* Preferences: Bullet Style */
+.app-root.bullet-square .todo__checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--todo-past-text-color);
+  border-radius: 1px;
+  background-color: transparent;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.app-root.bullet-square .todo__checkbox:checked {
+  background-color: var(--custom-color);
+  border-color: var(--custom-color);
+  opacity: 1;
+}
+
+.app-root.bullet-dot .todo__checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--todo-past-text-color);
+  background-color: transparent;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.app-root.bullet-dot .todo__checkbox:checked {
+  background-color: var(--custom-color);
+  border-color: var(--custom-color);
+  opacity: 1;
+}
+
+.app-root.bullet-arrow .todo__checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  opacity: 0.6;
+}
+.app-root.bullet-arrow .todo__checkbox::before {
+  content: "→";
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1;
+  color: var(--todo-past-text-color);
+}
+.app-root.bullet-arrow .todo__checkbox:checked::before {
+  color: var(--custom-color);
+}
+
 /* Lined notebook ruled lines in the column empty space (Signature TeuxDeux effect) */
 .todo__list::after {
   content: "";
   display: block;
   margin: 0 20px;
-  flex: 1 0 68px;
+  flex: 1 0 calc(var(--todo-item-height, 34px) * 2);
   box-sizing: border-box;
   background-image: repeating-linear-gradient(
     var(--todo-border-color),
     var(--todo-border-color) 1px,
     transparent 1px,
-    transparent 34px
+    transparent var(--todo-item-height, 34px)
   );
   min-height: 200px;
   pointer-events: none;
@@ -288,7 +376,7 @@ body {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  height: 34px;
+  height: var(--todo-item-height, 34px);
   position: relative;
   cursor: grab;
   user-select: none;
@@ -326,7 +414,7 @@ body {
 }
 
 .todo-content__text {
-  font-size: 14px;
+  font-size: var(--todo-font-size, 14px);
   font-weight: 400;
   color: var(--todo-text-color);
   flex: 1;
@@ -335,6 +423,10 @@ body {
   white-space: nowrap;
   line-height: 1.2;
   cursor: text;
+}
+
+.todo__input {
+  font-size: var(--todo-font-size, 14px);
 }
 
 .todo-content__text.is-done {

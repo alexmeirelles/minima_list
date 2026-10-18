@@ -135,7 +135,7 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
                     onChange={(e) => setNewText(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={t.addTodoPlaceholder}
-                    className="todo__input w-full bg-transparent border-none outline-none text-xs sm:text-sm placeholder-[var(--todo-past-text-color)]/70"
+                    className="todo__input w-full bg-transparent border-none outline-none placeholder-[var(--todo-past-text-color)]/70"
                   />
                 </div>
               </form>
