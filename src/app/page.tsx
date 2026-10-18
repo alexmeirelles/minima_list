@@ -154,11 +154,37 @@ export default function Home() {
     })
   );
 
-  // Generate displayed days: the view is centered on `viewDate` (today by default),
-  // shown as the FIRST column, followed by the next days (TeuxDeux behaviour).
+  // Detect mobile viewport (width <= 640px)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Mobile horizontal swipe between days
+  const [calendarTouchStart, setCalendarTouchStart] = useState<number | null>(null);
+  const handleCalendarTouchStart = (e: React.TouchEvent) => {
+    setCalendarTouchStart(e.targetTouches[0].clientX);
+  };
+  const handleCalendarTouchEnd = (e: React.TouchEvent) => {
+    if (calendarTouchStart === null) return;
+    const endX = e.changedTouches[0].clientX;
+    const deltaX = endX - calendarTouchStart;
+    if (deltaX < -50) {
+      navigateDays(1);
+    } else if (deltaX > 50) {
+      navigateDays(-1);
+    }
+    setCalendarTouchStart(null);
+  };
+
+  // Generate displayed days: single day on mobile or focus mode, multi-day horizon on desktop
   const displayedDays = useMemo(() => {
-    // Focus Mode displays only the current viewDate
-    if (inFocusMode) {
+    if (inFocusMode || isMobile) {
       return [viewDate];
     }
 
@@ -170,7 +196,7 @@ export default function Home() {
       daysList.push(d);
     }
     return daysList;
-  }, [viewDate, gridColumnSize, inFocusMode]);
+  }, [viewDate, gridColumnSize, inFocusMode, isMobile]);
 
   // Is the leftmost displayed day today? (controls the HOJE button visibility)
   const isViewingToday = useMemo(() => {
@@ -493,7 +519,11 @@ export default function Home() {
         <div className="app-layout">
           
           {/* CALENDAR SECTION (TOP HALF) */}
-          <section className="calendar-section">
+          <section
+            className="calendar-section"
+            onTouchStart={handleCalendarTouchStart}
+            onTouchEnd={handleCalendarTouchEnd}
+          >
             <div
               key={displayedDays[0]?.toISOString()}
               className={`calendar-grid min-w-full calendar-slide-${slideDir}`}

@@ -956,3 +956,113 @@ body {
 .animate-bounce-subtle {
   animation: bounceSubtle 1.8s infinite ease-in-out;
 }
+
+/* ==========================================================================
+   MOBILE LAYOUT (TeuxDeux Mobile Experience)
+   ========================================================================== */
+@media (max-width: 640px) {
+  .app-layout {
+    height: calc(100dvh - 48px - 48px);
+  }
+
+  .app-header {
+    height: 48px;
+    padding: 0 12px;
+  }
+
+  .header-logo {
+    font-size: 18px;
+  }
+
+  .calendar-section {
+    width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .calendar-grid {
+    width: 100%;
+  }
+
+  .todo {
+    width: 100vw;
+    min-width: 100vw;
+    border-right: none;
+  }
+
+  .todo__header {
+    padding: 14px 18px 8px 18px;
+  }
+
+  .todo__title {
+    font-size: 28px;
+    letter-spacing: 0.5px;
+  }
+
+  .todo__date {
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .todo__list-item {
+    height: 44px; /* Touch-friendly tap target */
+    padding: 0 18px;
+  }
+
+  .todo-content {
+    gap: 12px;
+  }
+
+  .todo-content__text {
+    font-size: 15px;
+  }
+
+  .todo__checkbox {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7; /* Discoverable on touch without requiring mouse hover */
+  }
+
+  /* Keep action buttons accessible on mobile */
+  .todo-buttons {
+    opacity: 0.85 !important;
+  }
+
+  .todo-buttons__button {
+    padding: 6px;
+  }
+
+  /* Hide desktop segmented control on mobile */
+  .ui-segmented-control {
+    display: none;
+  }
+
+  /* Mobile footer */
+  .app-footer {
+    height: 48px;
+    padding: 0 14px;
+  }
+
+  .app-footer-toolbar {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .someday-toolbar {
+    padding: 0 14px;
+    height: 38px;
+  }
+
+  .someday-lists-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .someday-lists-grid .todo {
+    width: 100vw;
+    min-width: 100vw;
+    scroll-snap-align: start;
+    border-right: none;
+  }
+}
