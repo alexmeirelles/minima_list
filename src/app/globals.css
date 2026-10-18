@@ -16,7 +16,7 @@
   --focus-outline-color: #852CE6;
 
   /* Todo items */
-  --todo-border-color: #edeef0;
+  --todo-border-color: #e5e6e8;
   --todo-header-background: #edeef0;
   --todo-header-text-color: #141414;
   --todo-past-text-color: #a6a6a7;
@@ -241,26 +241,36 @@ body {
 .todo__list {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 0;
+  position: relative;
+  /* Signature TeuxDeux lined notebook ruled paper effect */
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 33px,
+    var(--todo-border-color) 33px,
+    var(--todo-border-color) 34px
+  );
+  background-size: 100% 34px;
 }
 
 /* Single Todo List Item */
 .todo__list-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   padding: 0 20px;
-  height: var(--todo-item-height); /* ~34px */
+  height: 34px;
   position: relative;
   cursor: grab;
   user-select: none;
+  border-bottom: 1px solid var(--todo-border-color);
+  background: var(--app-background);
+}
+
+.todo--secondary .todo__list-item {
+  background: var(--someday-list-background);
 }
 
 .todo__list-item:active {
   cursor: grabbing;
-}
-
-.todo__list-item + .todo__list-item:not(.is-heading) .todo-content {
-  border-top: 1px solid var(--todo-border-color);
 }
 
 .todo-content {
@@ -1018,9 +1028,20 @@ body {
     letter-spacing: 1px;
   }
 
+  .todo__list {
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 43px,
+      var(--todo-border-color) 43px,
+      var(--todo-border-color) 44px
+    );
+    background-size: 100% 44px;
+  }
+
   .todo__list-item {
     height: 44px; /* Touch-friendly tap target */
     padding: 0 18px;
+    border-bottom: 1px solid var(--todo-border-color);
   }
 
   .todo-content {
