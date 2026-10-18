@@ -157,7 +157,17 @@ body {
 .calendar-grid {
   display: flex;
   height: 100%;
+  width: 100%;
+  min-width: 100%;
 }
+
+.calendar-grid .todo {
+  flex: 1 1 0%;
+  min-width: 180px;
+  width: 0;
+  max-width: 100%;
+}
+
 
 @keyframes slideInRight {
   from { transform: translateX(24px); opacity: 0.4; }
@@ -983,9 +993,12 @@ body {
     width: 100%;
   }
 
-  .todo {
+  .todo,
+  .calendar-grid .todo {
+    flex: none;
     width: 100vw;
     min-width: 100vw;
+    max-width: 100vw;
     border-right: none;
   }
 
