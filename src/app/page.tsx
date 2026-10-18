@@ -38,8 +38,6 @@ import {
   RotateCcwIcon,
   HelpIcon,
   XIcon,
-  ToggleLeftIcon,
-  ToggleRightIcon,
 } from '@/components/Icons';
 
 export default function Home() {
@@ -616,18 +614,8 @@ export default function Home() {
         <footer className="app-footer select-none">
           <div className="app-footer-toolbar">
             
-            {/* Left: Rollover toggle, Recurring Tasks, Reset Data */}
+            {/* Left: Preferences / Clear Reset Actions */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setRolloverEnabled(!rolloverEnabled)}
-                title={rolloverEnabled ? t.rolloverActive : t.rolloverInactive}
-                className={`transition-colors p-1 rounded hover:bg-[var(--timer-bg)] ${
-                  rolloverEnabled ? 'text-[var(--custom-color)]' : 'text-[var(--todo-past-text-color)]'
-                }`}
-                type="button"
-              >
-                {rolloverEnabled ? <ToggleRightIcon size={20} /> : <ToggleLeftIcon size={20} />}
-              </button>
               <button
                 onClick={() => setIsRecurringOpen(true)}
                 title={t.recurringTasks}
