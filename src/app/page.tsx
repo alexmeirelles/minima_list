@@ -24,6 +24,9 @@ import RecurringModal from '@/components/RecurringModal';
 import FocusMode from '@/components/FocusMode';
 import SettingsModal from '@/components/SettingsModal';
 import { PreferencesDrawer } from '@/components/PreferencesDrawer';
+import { AuthModal } from '@/components/AuthModal';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { fetchUserCloudData, syncLocalStateToCloud } from '@/services/supabaseSync';
 import { InputModal, ConfirmModal, InfoModal } from '@/components/Modal';
 import {
   SearchIcon,
@@ -73,11 +76,39 @@ export default function Home() {
     bulletStyle,
     isPreferencesOpen,
     setIsPreferencesOpen,
+    setCurrentUser,
+    loadCloudData,
   } = useTodoStore();
 
   const t = useTranslations();
+  const { user } = useSupabaseAuth();
 
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [viewDate, setViewDate] = useState<Date>(() => new Date());
+
+  // Supabase cloud sync on login/logout
+  useEffect(() => {
+    if (user) {
+      setCurrentUser({ id: user.id, email: user.email });
+      fetchUserCloudData(user.id).then((cloud) => {
+        const hasCloudTodos = Object.keys(cloud.todos).length > 0;
+        const hasCloudLists = cloud.somedayLists.length > 0 && cloud.somedayLists.some((l) => l.items.length > 0);
+
+        if (hasCloudTodos || hasCloudLists) {
+          loadCloudData(cloud);
+        } else {
+          // If cloud is empty and local has tasks, upload local tasks to cloud
+          const hasLocalTodos = Object.keys(todos).some((k) => todos[k]?.length > 0);
+          const hasLocalSomeday = somedayLists.some((l) => l.items.length > 0);
+          if (hasLocalTodos || hasLocalSomeday) {
+            syncLocalStateToCloud(user.id, todos, somedayLists);
+          }
+        }
+      });
+    } else {
+      setCurrentUser(null);
+    }
+  }, [user]);
   const [slideDir, setSlideDir] = useState<'left' | 'right'>('right');
 
   // Modals / Panels states
@@ -734,12 +765,15 @@ export default function Home() {
                 {darkMode ? <LightModeIcon size={16} /> : <DarkModeIcon size={16} />}
               </button>
               <button
-                title={t.settings}
+                title={user ? `${user.email} (Conectado)` : 'Conta / Login'}
                 type="button"
-                className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] p-1 rounded hover:bg-[var(--timer-bg)] transition-colors"
-                onClick={() => setShowSettings(true)}
+                className="relative text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] p-1 rounded hover:bg-[var(--timer-bg)] transition-colors"
+                onClick={() => setShowAuthModal(true)}
               >
                 <UserIcon size={16} />
+                {user && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-[var(--app-background)]" />
+                )}
               </button>
               <button
                 onClick={() => setShowHelp(true)}
@@ -821,6 +855,19 @@ export default function Home() {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         onResetConfirm={handleResetData}
+      />
+
+      {/* Auth & Cloud Account modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSyncNow={async () => {
+          if (user) {
+            await syncLocalStateToCloud(user.id, todos, somedayLists);
+            const cloud = await fetchUserCloudData(user.id);
+            loadCloudData(cloud);
+          }
+        }}
       />
 
       {/* Flying Rollover toast notice */}

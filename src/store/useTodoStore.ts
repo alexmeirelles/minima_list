@@ -3,6 +3,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Language } from '@/lib/i18n';
+import {
+  upsertCloudTodo,
+  deleteCloudTodo,
+  upsertCloudSomedayList,
+  deleteCloudSomedayList,
+  updateCloudPreferences,
+  type CloudUserData,
+} from '@/services/supabaseSync';
 
 export interface TodoItem {
   id: string;
@@ -92,6 +100,11 @@ interface TodoState {
   deleteRecurringTemplate: (id: string) => void;
   instantiateRecurringTodos: (dates: string[]) => void;
 
+  // Cloud Auth & Sync
+  currentUser: { id: string; email?: string } | null;
+  setCurrentUser: (user: { id: string; email?: string } | null) => void;
+  loadCloudData: (cloudData: CloudUserData) => void;
+
   // Onboarding
   seedOnboarding: (todayKey: string) => void;
 }
@@ -120,6 +133,27 @@ export const useTodoStore = create<TodoState>()(
       spacing: 'M',
       showCompleted: true,
       isPreferencesOpen: false,
+      currentUser: null,
+
+      setCurrentUser: (user) => set({ currentUser: user }),
+
+      loadCloudData: (cloudData) => {
+        set((state) => ({
+          todos: { ...state.todos, ...cloudData.todos },
+          somedayLists: cloudData.somedayLists.length > 0 ? cloudData.somedayLists : state.somedayLists,
+          ...(cloudData.preferences.darkMode !== undefined && { darkMode: cloudData.preferences.darkMode }),
+          ...(cloudData.preferences.gridColumnSize !== undefined && { gridColumnSize: cloudData.preferences.gridColumnSize }),
+          ...(cloudData.preferences.accentColor !== undefined && { accentColor: cloudData.preferences.accentColor }),
+          ...(cloudData.preferences.textSize !== undefined && { textSize: cloudData.preferences.textSize }),
+          ...(cloudData.preferences.spacing !== undefined && { spacing: cloudData.preferences.spacing }),
+          ...(cloudData.preferences.showCompleted !== undefined && { showCompleted: cloudData.preferences.showCompleted }),
+          ...(cloudData.preferences.showLines !== undefined && { showLines: cloudData.preferences.showLines }),
+          ...(cloudData.preferences.bulletStyle !== undefined && { bulletStyle: cloudData.preferences.bulletStyle }),
+          ...(cloudData.preferences.workspaceName !== undefined && { workspaceName: cloudData.preferences.workspaceName }),
+          ...(cloudData.preferences.rolloverEnabled !== undefined && { rolloverEnabled: cloudData.preferences.rolloverEnabled }),
+          ...(cloudData.preferences.language !== undefined && { language: cloudData.preferences.language }),
+        }));
+      },
 
       addTodo: (dateOrListId, text, isSomeday) => {
         const id = crypto.randomUUID();
@@ -153,6 +187,17 @@ export const useTodoStore = create<TodoState>()(
             };
           });
         }
+
+        const currentUser = get().currentUser;
+        if (currentUser) {
+          upsertCloudTodo(
+            currentUser.id,
+            newItem,
+            isSomeday ? undefined : dateOrListId,
+            isSomeday ? dateOrListId : undefined
+          );
+        }
+
         return id;
       },
 
@@ -181,6 +226,21 @@ export const useTodoStore = create<TodoState>()(
             };
           });
         }
+
+        const currentUser = get().currentUser;
+        if (currentUser) {
+          const item = isSomeday
+            ? get().somedayLists.find((l) => l.id === dateOrListId)?.items.find((i) => i.id === todoId)
+            : get().todos[dateOrListId]?.find((i) => i.id === todoId);
+          if (item) {
+            upsertCloudTodo(
+              currentUser.id,
+              item,
+              isSomeday ? undefined : dateOrListId,
+              isSomeday ? dateOrListId : undefined
+            );
+          }
+        }
       },
 
       updateTodoText: (dateOrListId, todoId, isSomeday, text) => {
@@ -207,6 +267,21 @@ export const useTodoStore = create<TodoState>()(
               },
             };
           });
+        }
+
+        const currentUser = get().currentUser;
+        if (currentUser) {
+          const item = isSomeday
+            ? get().somedayLists.find((l) => l.id === dateOrListId)?.items.find((i) => i.id === todoId)
+            : get().todos[dateOrListId]?.find((i) => i.id === todoId);
+          if (item) {
+            upsertCloudTodo(
+              currentUser.id,
+              item,
+              isSomeday ? undefined : dateOrListId,
+              isSomeday ? dateOrListId : undefined
+            );
+          }
         }
       },
 
@@ -235,6 +310,21 @@ export const useTodoStore = create<TodoState>()(
             };
           });
         }
+
+        const currentUser = get().currentUser;
+        if (currentUser) {
+          const item = isSomeday
+            ? get().somedayLists.find((l) => l.id === dateOrListId)?.items.find((i) => i.id === todoId)
+            : get().todos[dateOrListId]?.find((i) => i.id === todoId);
+          if (item) {
+            upsertCloudTodo(
+              currentUser.id,
+              item,
+              isSomeday ? undefined : dateOrListId,
+              isSomeday ? dateOrListId : undefined
+            );
+          }
+        }
       },
 
       deleteTodo: (dateOrListId, todoId, isSomeday) => {
@@ -262,6 +352,11 @@ export const useTodoStore = create<TodoState>()(
             };
           }
         });
+
+        const currentUser = get().currentUser;
+        if (currentUser) {
+          deleteCloudTodo(currentUser.id, todoId);
+        }
       },
 
       reorderTodos: (dateOrListId, items, isSomeday) => {
@@ -354,6 +449,22 @@ export const useTodoStore = create<TodoState>()(
             selectedTodo,
           };
         });
+
+        const currentUser = get().currentUser;
+        if (currentUser) {
+          const item = toSomeday
+            ? get().somedayLists.find((l) => l.id === toId)?.items.find((i) => i.id === todoId)
+            : get().todos[toId]?.find((i) => i.id === todoId);
+          if (item) {
+            upsertCloudTodo(
+              currentUser.id,
+              item,
+              toSomeday ? undefined : toId,
+              toSomeday ? toId : undefined,
+              targetIndex !== undefined ? targetIndex : 0
+            );
+          }
+        }
       },
 
       addSomedayList: (name) => {
@@ -364,6 +475,15 @@ export const useTodoStore = create<TodoState>()(
             { id, name, items: [] },
           ],
         }));
+
+        const currentUser = get().currentUser;
+        if (currentUser) {
+          const list = get().somedayLists.find((l) => l.id === id);
+          if (list) {
+            upsertCloudSomedayList(currentUser.id, list, get().somedayLists.length - 1);
+          }
+        }
+
         return id;
       },
 
@@ -375,6 +495,15 @@ export const useTodoStore = create<TodoState>()(
           updatedLists[listIndex] = { ...updatedLists[listIndex], name };
           return { somedayLists: updatedLists };
         });
+
+        const currentUser = get().currentUser;
+        if (currentUser) {
+          const list = get().somedayLists.find((l) => l.id === listId);
+          if (list) {
+            const idx = get().somedayLists.findIndex((l) => l.id === listId);
+            upsertCloudSomedayList(currentUser.id, list, idx);
+          }
+        }
       },
 
       deleteSomedayList: (listId) => {
@@ -393,6 +522,11 @@ export const useTodoStore = create<TodoState>()(
             selectedTodo,
           };
         });
+
+        const currentUser = get().currentUser;
+        if (currentUser) {
+          deleteCloudSomedayList(currentUser.id, listId);
+        }
       },
 
       reorderSomedayLists: (sourceId, targetId) => {
@@ -414,11 +548,15 @@ export const useTodoStore = create<TodoState>()(
       setDarkMode: (dark) => {
         set({ darkMode: dark });
         localStorage.setItem('darkMode', String(dark));
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { dark_mode: dark });
       },
 
       setGridColumnSize: (size) => {
         set({ gridColumnSize: size });
         localStorage.setItem('gridColumnSize', String(size));
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { grid_column_size: size });
       },
 
       setInFocusMode: (focus) => {
@@ -428,6 +566,8 @@ export const useTodoStore = create<TodoState>()(
 
       setWorkspaceName: (name) => {
         set({ workspaceName: name });
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { workspace_name: name });
       },
 
       setSelectedTodo: (todo) => {
@@ -436,34 +576,50 @@ export const useTodoStore = create<TodoState>()(
 
       setLanguage: (lang) => {
         set({ language: lang });
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { language: lang });
       },
 
       setAccentColor: (color) => {
         set({ accentColor: color });
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { accent_color: color });
       },
 
       setRolloverEnabled: (enabled) => {
         set({ rolloverEnabled: enabled });
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { rollover_enabled: enabled });
       },
 
       setShowLines: (show) => {
         set({ showLines: show });
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { show_lines: show });
       },
 
       setBulletStyle: (style) => {
         set({ bulletStyle: style });
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { bullet_style: style });
       },
 
       setTextSize: (size) => {
         set({ textSize: size });
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { text_size: size });
       },
 
       setSpacing: (spacing) => {
         set({ spacing: spacing });
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { spacing: spacing });
       },
 
       setShowCompleted: (show) => {
         set({ showCompleted: show });
+        const currentUser = get().currentUser;
+        if (currentUser) updateCloudPreferences(currentUser.id, { show_completed: show });
       },
 
       setIsPreferencesOpen: (open) => {
