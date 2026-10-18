@@ -38,6 +38,8 @@ import {
   RotateCcwIcon,
   HelpIcon,
   XIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
 } from '@/components/Icons';
 
 export default function Home() {
@@ -62,6 +64,7 @@ export default function Home() {
     accentColor,
     setAccentColor,
     rolloverEnabled,
+    setRolloverEnabled,
     rolloverPastTodos,
   } = useTodoStore();
 
@@ -613,17 +616,33 @@ export default function Home() {
         <footer className="app-footer select-none">
           <div className="app-footer-toolbar">
             
-            {/* Left: Preferences / Clear Reset Actions */}
+            {/* Left: Rollover toggle, Recurring Tasks, Reset Data */}
             <div className="flex items-center gap-2">
-              <button onClick={handleResetData} title={t.resetData} type="button">
-                <RotateCcwIcon size={16} />
+              <button
+                onClick={() => setRolloverEnabled(!rolloverEnabled)}
+                title={rolloverEnabled ? t.rolloverActive : t.rolloverInactive}
+                className={`transition-colors p-1 rounded hover:bg-[var(--timer-bg)] ${
+                  rolloverEnabled ? 'text-[var(--custom-color)]' : 'text-[var(--todo-past-text-color)]'
+                }`}
+                type="button"
+              >
+                {rolloverEnabled ? <ToggleRightIcon size={20} /> : <ToggleLeftIcon size={20} />}
               </button>
               <button
                 onClick={() => setIsRecurringOpen(true)}
                 title={t.recurringTasks}
+                className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] p-1 rounded hover:bg-[var(--timer-bg)] transition-colors"
                 type="button"
               >
                 <RecurringIcon size={16} />
+              </button>
+              <button
+                onClick={handleResetData}
+                title={t.resetData}
+                className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] p-1 rounded hover:bg-[var(--timer-bg)] transition-colors"
+                type="button"
+              >
+                <RotateCcwIcon size={16} />
               </button>
             </div>
 
@@ -679,13 +698,13 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Right: Language toggle, dark mode, Go Pro (disabled), settings */}
+            {/* Right: Language toggle, dark mode, settings, help */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
                 title={t.languageToggle}
                 type="button"
-                className="text-base leading-none"
+                className="text-base leading-none hover:scale-110 transition-transform p-1 rounded hover:bg-[var(--timer-bg)]"
               >
                 {language === 'pt' ? '🇧🇷' : '🇺🇸'}
               </button>
@@ -693,25 +712,24 @@ export default function Home() {
                 onClick={() => setDarkMode(!darkMode)}
                 title={t.toggleDarkMode}
                 type="button"
+                className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] p-1 rounded hover:bg-[var(--timer-bg)] transition-colors"
               >
                 {darkMode ? <LightModeIcon size={16} /> : <DarkModeIcon size={16} />}
               </button>
               <button
-                disabled
-                title={t.comingSoon}
-                className="ui-button--cta ui-button--dark flex items-center justify-center h-[26px] opacity-50 cursor-default"
-                type="button"
-              >
-                {t.goPro}
-              </button>
-              <button
                 title={t.settings}
                 type="button"
+                className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] p-1 rounded hover:bg-[var(--timer-bg)] transition-colors"
                 onClick={() => setShowSettings(true)}
               >
                 <UserIcon size={16} />
               </button>
-              <button onClick={() => setShowHelp(true)} title={t.help} type="button">
+              <button
+                onClick={() => setShowHelp(true)}
+                title={t.help}
+                className="text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] p-1 rounded hover:bg-[var(--timer-bg)] transition-colors"
+                type="button"
+              >
                 <HelpIcon size={16} />
               </button>
             </div>

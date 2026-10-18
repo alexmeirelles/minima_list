@@ -105,6 +105,8 @@ export const translations = {
     // Rollover & Appearance
     flyingRollover: 'Flying Rollover',
     flyingRolloverDesc: 'Adiar tarefas não concluídas do passado automaticamente para hoje',
+    rolloverActive: 'The Flying Rollover: Ativo',
+    rolloverInactive: 'The Flying Rollover: Desativado',
     themeColor: 'Cor de destaque',
     themeColorDesc: 'Escolha a cor de acento do seu TeuxDeux',
     customColor: 'Personalizada',
@@ -219,6 +221,8 @@ export const translations = {
     // Rollover & Appearance
     flyingRollover: 'Flying Rollover',
     flyingRolloverDesc: 'Automatically roll unfinished past tasks into today',
+    rolloverActive: 'The Flying Rollover: Active',
+    rolloverInactive: 'The Flying Rollover: Inactive',
     themeColor: 'Accent Color',
     themeColorDesc: 'Choose your TeuxDeux accent theme color',
     customColor: 'Custom',
