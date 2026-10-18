@@ -23,6 +23,7 @@ import NoteSidebar from '@/components/NoteSidebar';
 import RecurringModal from '@/components/RecurringModal';
 import FocusMode from '@/components/FocusMode';
 import SettingsModal from '@/components/SettingsModal';
+import { PreferencesDrawer } from '@/components/PreferencesDrawer';
 import { InputModal, ConfirmModal, InfoModal } from '@/components/Modal';
 import {
   SearchIcon,
@@ -38,6 +39,7 @@ import {
   RotateCcwIcon,
   HelpIcon,
   XIcon,
+  ToggleLeftIcon,
 } from '@/components/Icons';
 
 export default function Home() {
@@ -64,6 +66,9 @@ export default function Home() {
     rolloverEnabled,
     setRolloverEnabled,
     rolloverPastTodos,
+    showLines,
+    isPreferencesOpen,
+    setIsPreferencesOpen,
   } = useTodoStore();
 
   const t = useTranslations();
@@ -357,7 +362,7 @@ export default function Home() {
   }, [searchQuery, todos, somedayLists]);
 
   return (
-    <div className="app-root">
+    <div className={`app-root ${!showLines ? 'hide-lines' : ''}`}>
       {/* Search overlay/dropdown */}
       {showSearch && (
         <div className="bg-[var(--someday-list-background)] border-b border-[var(--todo-border-color)] px-6 py-4 flex flex-col gap-3 relative z-50 shadow-md">
@@ -520,102 +525,118 @@ export default function Home() {
         </header>
 
         {/* CORE APPLICATION LAYOUT CONTAINER */}
-        <div className="app-layout">
-          
-          {/* CALENDAR SECTION (TOP HALF) */}
-          <section
-            className="calendar-section"
-            onTouchStart={handleCalendarTouchStart}
-            onTouchEnd={handleCalendarTouchEnd}
-          >
-            <div
-              key={displayedDays[0]?.toISOString()}
-              className={`calendar-grid min-w-full calendar-slide-${slideDir}`}
-            >
-              {displayedDays.map((date) => {
-                const dateKey = formatDateKey(date);
-                const dayTasks = todos[dateKey] || [];
-                return (
-                  <DayColumn
-                    key={dateKey}
-                    date={date}
-                    tasks={dayTasks}
-                  />
-                );
-              })}
-            </div>
-          </section>
+        <div className={`app-layout ${isPreferencesOpen ? 'has-canvas-open' : ''}`}>
+          {/* Preferences Drawer */}
+          <PreferencesDrawer />
 
-          {/* SOMEDAY DIVIDER / TOOLBAR */}
-          <div className="someday-toolbar select-none">
-            <nav className="someday-list-tabs">
-              <div className="someday-list-tabs__tabs">
-                <div className="someday-list-tabs__tab someday-list-tabs__tab--active">
-                  <span>{t.somedayLists}</span>
-                  <span className="someday-list-tabs__number">
-                    {somedayLists.reduce((acc, curr) => acc + curr.items.length, 0)}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Add list button */}
-              <button
-                onClick={handleCreateList}
-                className="someday-list-tabs__add"
-                title={t.createList}
-                type="button"
+          <div className="app-main-content">
+            {/* CALENDAR SECTION (TOP HALF) */}
+            <section
+              className="calendar-section"
+              onTouchStart={handleCalendarTouchStart}
+              onTouchEnd={handleCalendarTouchEnd}
+            >
+              <div
+                key={displayedDays[0]?.toISOString()}
+                className={`calendar-grid min-w-full calendar-slide-${slideDir}`}
               >
-                +
-              </button>
-            </nav>
-
-            {/* Collapse list button */}
-            <button
-              onClick={() => setIsSomedayCollapsed(!isSomedayCollapsed)}
-              className="someday-collapse__icon"
-              style={{ transform: isSomedayCollapsed ? 'rotate(180deg)' : 'none' }}
-              title={isSomedayCollapsed ? t.expandSomeday : t.collapseSomeday}
-              type="button"
-            >
-              ▼
-            </button>
-          </div>
-
-          {/* SOMEDAY SECTION (BOTTOM HALF) */}
-          {!isSomedayCollapsed && (
-            <section className="someday-list-section">
-              <div className="someday-lists-grid">
-                {somedayLists.map((list) => (
-                  <CustomListColumn
-                    key={list.id}
-                    listId={list.id}
-                    name={list.name}
-                    items={list.items}
-                  />
-                ))}
-
-                {/* Create List Call-to-action Column */}
-                <div className="todo todo--secondary flex flex-col justify-center items-center opacity-60 hover:opacity-100 transition-all p-6 min-w-[204px] border-r border-[var(--footer-border-color)]">
-                  <button
-                    onClick={handleCreateList}
-                    className="flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] hover:text-[var(--custom-color)] transition-colors"
-                    type="button"
-                  >
-                    <span className="text-3xl">+</span>
-                    {t.newList}
-                  </button>
-                </div>
+                {displayedDays.map((date) => {
+                  const dateKey = formatDateKey(date);
+                  const dayTasks = todos[dateKey] || [];
+                  return (
+                    <DayColumn
+                      key={dateKey}
+                      date={date}
+                      tasks={dayTasks}
+                    />
+                  );
+                })}
               </div>
             </section>
-          )}
+
+            {/* SOMEDAY DIVIDER / TOOLBAR */}
+            <div className="someday-toolbar select-none">
+              <nav className="someday-list-tabs">
+                <div className="someday-list-tabs__tabs">
+                  <div className="someday-list-tabs__tab someday-list-tabs__tab--active">
+                    <span>{t.somedayLists}</span>
+                    <span className="someday-list-tabs__number">
+                      {somedayLists.reduce((acc, curr) => acc + curr.items.length, 0)}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Add list button */}
+                <button
+                  onClick={handleCreateList}
+                  className="someday-list-tabs__add"
+                  title={t.createList}
+                  type="button"
+                >
+                  +
+                </button>
+              </nav>
+
+              {/* Collapse list button */}
+              <button
+                onClick={() => setIsSomedayCollapsed(!isSomedayCollapsed)}
+                className="someday-collapse__icon"
+                style={{ transform: isSomedayCollapsed ? 'rotate(180deg)' : 'none' }}
+                title={isSomedayCollapsed ? t.expandSomeday : t.collapseSomeday}
+                type="button"
+              >
+                ▼
+              </button>
+            </div>
+
+            {/* SOMEDAY SECTION (BOTTOM HALF) */}
+            {!isSomedayCollapsed && (
+              <section className="someday-list-section">
+                <div className="someday-lists-grid">
+                  {somedayLists.map((list) => (
+                    <CustomListColumn
+                      key={list.id}
+                      listId={list.id}
+                      name={list.name}
+                      items={list.items}
+                    />
+                  ))}
+
+                  {/* Create List Call-to-action Column */}
+                  <div className="todo todo--secondary flex flex-col justify-center items-center opacity-60 hover:opacity-100 transition-all p-6 min-w-[204px] border-r border-[var(--footer-border-color)]">
+                    <button
+                      onClick={handleCreateList}
+                      className="flex flex-col items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--todo-past-text-color)] hover:text-[var(--custom-color)] transition-colors"
+                      type="button"
+                    >
+                      <span className="text-3xl">+</span>
+                      {t.newList}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
         </div>
 
         {/* STICKY FOOTER */}
         <footer className="app-footer select-none">
           <div className="app-footer-toolbar">
             
-            {/* Left: Preferences / Clear Reset Actions */}
-            <div className="flex items-center gap-2">
+            {/* Left: Preferences Toggle & Recurring / Reset Actions */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setIsPreferencesOpen(!isPreferencesOpen)}
+                title="Preferences"
+                className={`p-1 rounded transition-colors ${
+                  isPreferencesOpen
+                    ? 'text-[var(--custom-color)] bg-[var(--timer-bg)]'
+                    : 'text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] hover:bg-[var(--timer-bg)]'
+                }`}
+                type="button"
+              >
+                <ToggleLeftIcon size={18} />
+              </button>
               <button
                 onClick={() => setIsRecurringOpen(true)}
                 title={t.recurringTasks}

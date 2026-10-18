@@ -6,7 +6,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
 import { useTranslations } from '@/hooks/useTranslations';
 import TaskItem from './TaskItem';
-import { VerticalDotsIcon } from './Icons';
+import { VerticalDotsIcon, DragHandleIcon } from './Icons';
 import { ConfirmModal } from './Modal';
 
 interface CustomListColumnProps {
@@ -16,8 +16,9 @@ interface CustomListColumnProps {
 }
 
 export default function CustomListColumn({ listId, name, items }: CustomListColumnProps) {
-  const { addTodo, renameSomedayList, deleteSomedayList } = useTodoStore();
+  const { addTodo, renameSomedayList, deleteSomedayList, reorderSomedayLists } = useTodoStore();
   const t = useTranslations();
+  const [isDragOverCol, setIsDragOverCol] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleText, setTitleText] = useState(name);
   const [newText, setNewText] = useState('');
@@ -130,10 +131,42 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
 
   return (
     <div
-      className="todo todo--secondary"
+      className={`todo todo--secondary transition-colors ${
+        isDragOverCol ? 'border-l-2 border-l-[var(--custom-color)] bg-[var(--timer-bg)]' : ''
+      }`}
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes('text/minima-someday-list')) {
+          e.preventDefault();
+          setIsDragOverCol(true);
+        }
+      }}
+      onDragLeave={() => setIsDragOverCol(false)}
+      onDrop={(e) => {
+        const sourceId = e.dataTransfer.getData('text/minima-someday-list');
+        if (sourceId && sourceId !== listId) {
+          e.preventDefault();
+          reorderSomedayLists(sourceId, listId);
+        }
+        setIsDragOverCol(false);
+      }}
     >
+      {/* Someday Column Drag Handle (exact TeuxDeux drag handle icon) */}
+      <div className="someday-actions flex justify-center pt-2 pb-0 cursor-grab active:cursor-grabbing select-none">
+        <section
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('text/minima-someday-list', listId);
+            e.dataTransfer.effectAllowed = 'move';
+          }}
+          className="someday-actions__handle p-1 text-[var(--todo-past-text-color)] hover:text-[var(--todo-text-color)] transition-colors opacity-40 hover:opacity-100"
+          title="Arraste para reordenar coluna"
+        >
+          <DragHandleIcon size={14} />
+        </section>
+      </div>
+
       <header className="todo__header flex items-center justify-between relative group/header select-none">
         <div className="flex-1 min-w-0 pr-2">
           {isEditingTitle ? (
@@ -209,12 +242,9 @@ export default function CustomListColumn({ listId, name, items }: CustomListColu
           </ul>
         </SortableContext>
 
-        {/* Empty area filler so you can drop items onto it */}
-        <div className="flex-1 min-h-[40px]" />
-
-        {/* Create Todo Item Row */}
-        <form onSubmit={handleAdd} className="mt-auto px-5 mb-4">
-          <div className="todo-content todo-content--create">
+        {/* Create Todo Item Row right under tasks */}
+        <form onSubmit={handleAdd} className="px-5">
+          <div className="todo-content todo-content--create h-[34px]">
             <span className="todo-content--create__plus">+</span>
             <input
               ref={newTodoInputRef}

@@ -16,7 +16,7 @@
   --focus-outline-color: #852CE6;
 
   /* Todo items */
-  --todo-border-color: #e5e6e8;
+  --todo-border-color: #edeef0;
   --todo-header-background: #edeef0;
   --todo-header-text-color: #141414;
   --todo-past-text-color: #a6a6a7;
@@ -52,7 +52,7 @@ body.dark-mode {
   --banner-text-color: #ffffff;
   --focus-outline-color: #9b4ff7;
 
-  --todo-border-color: #1e1e24;
+  --todo-border-color: #232328;
   --todo-header-background: #1e1e24;
   --todo-header-text-color: #e2e2e8;
   --todo-past-text-color: #63636e;
@@ -109,6 +109,19 @@ body {
   flex-direction: column;
   height: calc(100vh - 44px - 44px); /* minus header and footer */
   overflow: hidden;
+}
+
+.app-layout.has-canvas-open {
+  flex-direction: row;
+}
+
+.app-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .app-header {
@@ -240,16 +253,28 @@ body {
 /* Todo items list */
 .todo__list {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   position: relative;
-  /* Signature TeuxDeux lined notebook ruled paper effect */
+  background: transparent;
+}
+
+/* Lined notebook ruled lines in the column empty space (Signature TeuxDeux effect) */
+.todo__list::after {
+  content: "";
+  display: block;
+  margin: 0 20px;
+  flex: 1 0 68px;
+  box-sizing: border-box;
   background-image: repeating-linear-gradient(
-    transparent,
-    transparent 33px,
-    var(--todo-border-color) 33px,
-    var(--todo-border-color) 34px
+    var(--todo-border-color),
+    var(--todo-border-color) 1px,
+    transparent 1px,
+    transparent 34px
   );
-  background-size: 100% 34px;
+  min-height: 200px;
+  pointer-events: none;
 }
 
 /* Single Todo List Item */
@@ -261,12 +286,11 @@ body {
   position: relative;
   cursor: grab;
   user-select: none;
-  border-bottom: 1px solid var(--todo-border-color);
-  background: var(--app-background);
+  background: transparent;
 }
 
 .todo--secondary .todo__list-item {
-  background: var(--someday-list-background);
+  background: transparent;
 }
 
 .todo__list-item:active {
@@ -279,6 +303,20 @@ body {
   width: 100%;
   height: 100%;
   gap: 8px;
+  border-top: 1px solid var(--todo-border-color);
+}
+
+/* First todo item in list has transparent top border */
+.todo__list ul > li:first-child .todo-content {
+  border-top-color: transparent;
+}
+
+/* When lines are hidden via Preferences */
+.hide-lines .todo-content {
+  border-top-color: transparent !important;
+}
+.hide-lines .todo__list::after {
+  display: none !important;
 }
 
 .todo-content__text {

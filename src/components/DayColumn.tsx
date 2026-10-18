@@ -125,12 +125,9 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
           </ul>
         </SortableContext>
 
-        {/* Empty area filler so you can drop items onto it */}
-        <div className="flex-1 min-h-[40px]" />
-
-        {/* Create Todo Item Row */}
-        <form onSubmit={handleAdd} className="mt-auto px-5 mb-4">
-          <div className="todo-content todo-content--create">
+        {/* Create Todo Item Row right after tasks */}
+        <form onSubmit={handleAdd} className="px-5">
+          <div className="todo-content todo-content--create h-[34px]">
             <span className="todo-content--create__plus">+</span>
             <input
               ref={inputRef}

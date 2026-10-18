@@ -40,6 +40,12 @@ interface TodoState {
   rolloverEnabled: boolean;
   language: Language;
   hasSeeded: boolean;
+  showLines: boolean;
+  bulletStyle: 'none' | 'square' | 'dot' | 'arrow';
+  textSize: 'S' | 'M' | 'L';
+  spacing: 'S' | 'M' | 'L';
+  showCompleted: boolean;
+  isPreferencesOpen: boolean;
 
   // Actions
   addTodo: (dateOrListId: string, text: string, isSomeday: boolean) => string;
@@ -61,6 +67,7 @@ interface TodoState {
   addSomedayList: (name: string) => string;
   renameSomedayList: (listId: string, name: string) => void;
   deleteSomedayList: (listId: string) => void;
+  reorderSomedayLists: (sourceId: string, targetId: string) => void;
   setActiveSomedayListId: (listId: string | null) => void;
   
   // Settings Actions
@@ -73,6 +80,12 @@ interface TodoState {
   setAccentColor: (color: string) => void;
   setRolloverEnabled: (enabled: boolean) => void;
   rolloverPastTodos: (todayKey: string) => number;
+  setShowLines: (show: boolean) => void;
+  setBulletStyle: (style: 'none' | 'square' | 'dot' | 'arrow') => void;
+  setTextSize: (size: 'S' | 'M' | 'L') => void;
+  setSpacing: (spacing: 'S' | 'M' | 'L') => void;
+  setShowCompleted: (show: boolean) => void;
+  setIsPreferencesOpen: (open: boolean) => void;
 
   // Recurring Actions
   addRecurringTemplate: (text: string, pattern: RecurringTemplate['pattern'], dayOfWeek?: number) => void;
@@ -101,6 +114,12 @@ export const useTodoStore = create<TodoState>()(
       rolloverEnabled: true,
       language: 'pt' as Language,
       hasSeeded: false,
+      showLines: true,
+      bulletStyle: 'none',
+      textSize: 'M',
+      spacing: 'M',
+      showCompleted: true,
+      isPreferencesOpen: false,
 
       addTodo: (dateOrListId, text, isSomeday) => {
         const id = crypto.randomUUID();
@@ -376,6 +395,18 @@ export const useTodoStore = create<TodoState>()(
         });
       },
 
+      reorderSomedayLists: (sourceId, targetId) => {
+        set((state) => {
+          const fromIdx = state.somedayLists.findIndex((l) => l.id === sourceId);
+          const toIdx = state.somedayLists.findIndex((l) => l.id === targetId);
+          if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return {};
+          const updated = [...state.somedayLists];
+          const [moved] = updated.splice(fromIdx, 1);
+          updated.splice(toIdx, 0, moved);
+          return { somedayLists: updated };
+        });
+      },
+
       setActiveSomedayListId: (listId) => {
         set({ activeSomedayListId: listId });
       },
@@ -413,6 +444,30 @@ export const useTodoStore = create<TodoState>()(
 
       setRolloverEnabled: (enabled) => {
         set({ rolloverEnabled: enabled });
+      },
+
+      setShowLines: (show) => {
+        set({ showLines: show });
+      },
+
+      setBulletStyle: (style) => {
+        set({ bulletStyle: style });
+      },
+
+      setTextSize: (size) => {
+        set({ textSize: size });
+      },
+
+      setSpacing: (spacing) => {
+        set({ spacing: spacing });
+      },
+
+      setShowCompleted: (show) => {
+        set({ showCompleted: show });
+      },
+
+      setIsPreferencesOpen: (open) => {
+        set({ isPreferencesOpen: open });
       },
 
       rolloverPastTodos: (todayKey) => {
