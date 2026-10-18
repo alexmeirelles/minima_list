@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useTodoStore, type TodoItem } from '@/store/useTodoStore';
@@ -14,14 +14,50 @@ interface DayColumnProps {
 }
 
 export default function DayColumn({ date, tasks }: DayColumnProps) {
-  const { addTodo } = useTodoStore();
+  const { addTodo, setInFocusMode } = useTodoStore();
   const t = useTranslations();
   const [newText, setNewText] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const dateKey = formatDateKey(date);
 
   const { setNodeRef } = useDroppable({
     id: dateKey,
   });
+
+  // Handle right-click context menu
+  const handleContextMenu = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+    e.preventDefault();
+    const x = Math.min(e.clientX, window.innerWidth - 210);
+    const y = Math.min(e.clientY, window.innerHeight - 130);
+    setContextMenu({ x, y });
+  };
+
+  // Handle double-click anywhere on column to start typing
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON' || target.tagName === 'A') {
+      return;
+    }
+    inputRef.current?.focus();
+  };
+
+  // Close context menu on outside click or Esc
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setContextMenu(null);
+    };
+    window.addEventListener('click', close);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [contextMenu]);
 
   const today = new Date();
   const isToday =
@@ -64,7 +100,11 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
   else if (isPast) columnClass += ' todo--past';
 
   return (
-    <div className={columnClass}>
+    <div
+      className={columnClass}
+      onDoubleClick={handleDoubleClick}
+      onContextMenu={handleContextMenu}
+    >
       <header className="todo__header select-none">
         <p className="todo__date">{dateString}</p>
         <h2 className="todo__title">{dayName}</h2>
@@ -104,6 +144,38 @@ export default function DayColumn({ date, tasks }: DayColumnProps) {
           </div>
         </form>
       </div>
+
+      {/* Floating Context Menu on Right Click */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-[var(--app-background)] border border-[var(--todo-border-color)] shadow-2xl rounded-lg py-1.5 min-w-[190px] text-xs font-medium select-none"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="w-full text-left px-3.5 py-2 hover:bg-[var(--someday-list-background)] hover:text-[var(--custom-color)] flex items-center gap-2 transition-colors text-[var(--todo-text-color)]"
+            onClick={() => {
+              setContextMenu(null);
+              setTimeout(() => inputRef.current?.focus(), 50);
+            }}
+          >
+            <span className="text-base font-bold leading-none text-[var(--custom-color)]">+</span>
+            {t.addTodoAction}
+          </button>
+          <button
+            type="button"
+            className="w-full text-left px-3.5 py-2 hover:bg-[var(--someday-list-background)] hover:text-[var(--custom-color)] flex items-center gap-2 transition-colors text-[var(--todo-text-color)]"
+            onClick={() => {
+              setContextMenu(null);
+              setInFocusMode(true);
+            }}
+          >
+            <span className="text-sm">🎯</span>
+            {t.focusDayAction}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
