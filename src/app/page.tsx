@@ -25,6 +25,7 @@ import FocusMode from '@/components/FocusMode';
 import SettingsModal from '@/components/SettingsModal';
 import { PreferencesDrawer } from '@/components/PreferencesDrawer';
 import { AuthModal } from '@/components/AuthModal';
+import { LoginPage } from '@/components/LoginPage';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { fetchUserCloudData, syncLocalStateToCloud } from '@/services/supabaseSync';
 import { InputModal, ConfirmModal, InfoModal } from '@/components/Modal';
@@ -81,7 +82,15 @@ export default function Home() {
   } = useTodoStore();
 
   const t = useTranslations();
-  const { user } = useSupabaseAuth();
+  const { user, loading: authLoading } = useSupabaseAuth();
+
+  const [isGuestMode, setIsGuestMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsGuestMode(sessionStorage.getItem('nexxxt_guest_mode') === 'true');
+    }
+  }, []);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [viewDate, setViewDate] = useState<Date>(() => new Date());
@@ -107,6 +116,10 @@ export default function Home() {
       });
     } else {
       setCurrentUser(null);
+      setIsGuestMode(false);
+      try {
+        sessionStorage.removeItem('nexxxt_guest_mode');
+      } catch {}
     }
   }, [user]);
   const [slideDir, setSlideDir] = useState<'left' | 'right'>('right');
@@ -395,6 +408,32 @@ export default function Home() {
 
     return results;
   }, [searchQuery, todos, somedayLists]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen w-full bg-[var(--app-background)] flex flex-col items-center justify-center">
+        <div className="flex items-center gap-1.5 animate-pulse">
+          <span className="font-['Barlow_Condensed',sans-serif] font-black text-3xl tracking-widest text-[var(--custom-color)]">
+            NEXXXT
+          </span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--custom-color)]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user && !isGuestMode) {
+    return (
+      <LoginPage
+        onContinueAsGuest={() => {
+          setIsGuestMode(true);
+          try {
+            sessionStorage.setItem('nexxxt_guest_mode', 'true');
+          } catch {}
+        }}
+      />
+    );
+  }
 
   return (
     <div
